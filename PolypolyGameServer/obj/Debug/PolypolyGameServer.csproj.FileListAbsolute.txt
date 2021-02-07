@@ -1,0 +1,6 @@
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\bin\Debug\PolypolyGameServer.dll
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\bin\Debug\PolypolyGameServer.pdb
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.csproj.CoreCompileInputs.cache
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.dll
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.pdb
+C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.csprojAssemblyReference.cache

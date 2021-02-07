@@ -1,0 +1,1 @@
+Åben ikke koden direkte fra unity, åben projektet i Visual Studio istedet (åben projekt filen)
