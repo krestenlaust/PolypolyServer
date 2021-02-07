@@ -265,7 +265,7 @@ namespace PolypolyGameServer
         {
             byte position = (byte) gameServer.Players[playerID].Position;
 
-            switch (serverBoard.TilesType[position])
+            switch (serverBoard.TileTypes[position])
             {
                 case TileType.Jail:
                 case TileType.Nothing:
@@ -290,7 +290,7 @@ namespace PolypolyGameServer
                     SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount);
                     break;
                 case TileType.Property:
-                    var property = serverBoard.TilesProperty[position];
+                    var property = serverBoard.PropertyTiles[position];
 
                     var canAfford = gameServer.Players[playerID].Money >= property.BaseCost;
 
@@ -504,17 +504,17 @@ namespace PolypolyGameServer
 
         private void SyncronizeBoard()
         {
-            var propertyCount = serverBoard.TilesProperty.Count(Tile => !(Tile is null));
+            var propertyCount = serverBoard.PropertyTiles.Count(Tile => !(Tile is null));
 
             var packet = new byte[Packet.Construct.SIZE_UpdateBoardProperty * propertyCount];
 
             var packetPtr = 0;
-            for (var i = 0; i < serverBoard.TilesProperty.Length; i++)
+            for (var i = 0; i < serverBoard.PropertyTiles.Length; i++)
             {
-                if (serverBoard.TilesProperty[i] == null)
+                if (serverBoard.PropertyTiles[i] == null)
                     continue;
 
-                var partialPacket = Packet.Construct.UpdateBoardProperty((byte) i, serverBoard.TilesProperty[i]);
+                var partialPacket = Packet.Construct.UpdateBoardProperty((byte) i, serverBoard.PropertyTiles[i]);
                 partialPacket.CopyTo(packet, packetPtr);
                 packetPtr += Packet.Construct.SIZE_UpdateBoardProperty;
             }

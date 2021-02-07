@@ -25,10 +25,20 @@ namespace PolypolyGameServer
         public byte JailTurns;
         public int Money;
         public string Nickname = DEFAULT_NAME;
-
         public int Position;
+
+        /// <summary>
+        /// Whether the player wants to use a prison card or not, if null then no reply.
+        /// </summary>
         public bool? ReplyJailOffer = null;
+        /// <summary>
+        /// Whether the player wants to buy a property or not, if null then no reply.
+        /// </summary>
         public bool? ReplyPropertyOffer = null;
+        /// <summary>
+        /// Describes the index of property to auction, if null then no reply.
+        /// </summary>
+        public byte? ReplyAuctionIndex = null;
 
         public Player(bool isHost)
         {

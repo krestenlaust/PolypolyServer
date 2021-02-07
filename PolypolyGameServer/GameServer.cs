@@ -46,6 +46,11 @@ namespace PolypolyGameServer
             tcpListener = new TcpListener(address, port);
         }
 
+        private void Print(string msg)
+        {
+            log.Print("[Network] " + msg);
+        }
+
         /// <summary>
         /// Start accepting players.
         /// </summary>
@@ -55,7 +60,7 @@ namespace PolypolyGameServer
             StartAcceptingPlayers();
             tcpListener.BeginAcceptTcpClient(PlayerConnected, null);
 
-            log.Print($"Server listening on {tcpListener.LocalEndpoint}...");
+            Print($"Server listening on {tcpListener.LocalEndpoint}...");
 
             Task.Run(() => NetworkLoop(cancellationToken), cancellationToken);
         }
@@ -132,7 +137,7 @@ namespace PolypolyGameServer
             var updateIDPacket = Packet.Construct.AssignPlayerID(playerID);
             stream.Write(updateIDPacket, 0, updateIDPacket.Length);
 
-            log.Print($"[{netClient.Client.RemoteEndPoint}] Has connected and been assigned ID: {playerID}");
+            Print($"[{netClient.Client.RemoteEndPoint}] Has connected and been assigned ID: {playerID}");
 
             IntroducePlayer(ref stream, playerID);
         }
@@ -172,20 +177,15 @@ namespace PolypolyGameServer
                     if (!Players[ID].NetClient.Connected && Players[ID].NetClient.Available == 0)
                     {
                         byte[] disconnectPacket;
-                        if (logic.isGameInProgress)
-                        {
-                            // Keep seat open (if disconnected unintentionally)
-                            disconnectPacket =
-                                Packet.Construct.PlayerDisconnected(ID, false, Packet.DisconnectReason.LostConnection);
-                        }
-                        else
+
+                        // check if disconnected during game or not.
+                        if (!logic.isGameInProgress)
                         {
                             // Empty seat
                             Players.Remove(ID);
-
-                            disconnectPacket =
-                                Packet.Construct.PlayerDisconnected(ID, true, Packet.DisconnectReason.LostConnection);
                         }
+
+                        disconnectPacket = Packet.Construct.PlayerDisconnected(ID, !logic.isGameInProgress, Packet.DisconnectReason.LostConnection);
 
                         BroadcastPacket(disconnectPacket);
                         continue;
@@ -194,11 +194,11 @@ namespace PolypolyGameServer
                     if (Players[ID].NetClient.Available == 0)
                         continue;
 
-                    var stream = Players[ID].NetClient.GetStream();
-                    var packetHeader = (Packet.PacketType) stream.ReadByte();
+                    NetworkStream stream = Players[ID].NetClient.GetStream();
+                    Packet.PacketType packetHeader = (Packet.PacketType) stream.ReadByte();
                     byte[] broadcastPacket = null;
 
-                    log.Print($"[Network][{ID}] {Enum.GetName(typeof(Packet.PacketType), packetHeader)}");
+                    Print($"[{ID}] {Enum.GetName(typeof(Packet.PacketType), packetHeader)}");
                     switch (packetHeader)
                     {
                         case Packet.PacketType.DicerollRequest:
@@ -208,14 +208,14 @@ namespace PolypolyGameServer
                             Packet.Deconstruct.PlayerNickname(stream, out var nickname);
                             if (Players[ID].isReady)
                             {
-                                log.Print($"[{ID}] Recieved nickname request, but player is ready. Discarded.");
+                                Print($"[{ID}] Recieved nickname request, but player is ready. Discarded.");
                                 break;
                             }
 
                             if (nickname.Length > 15) nickname = nickname.Substring(0, 15);
 
                             Players[ID].Nickname = nickname;
-                            log.Print($"[{ID}] Changed username to {nickname}");
+                            Print($"[{ID}] Changed username to {nickname}");
 
                             // Synkronisér brugernavn med andre brugere.
                             broadcastPacket = Packet.Construct.UpdatePlayerNickname(nickname, ID);
