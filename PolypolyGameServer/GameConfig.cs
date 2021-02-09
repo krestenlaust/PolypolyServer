@@ -3,13 +3,11 @@
     public struct GameConfig
     {
         public int MaxPlayers { get; set; }
-        public byte SentenceLength { get; set; }
+        public byte SentenceDuration { get; set; }
         public int PassGoReward { get; set; }
 
         public int StartMoney { get; set; }
 
-        // This should be the same as prison coupon worth.
-        public int PrisonBailCost { get; set; }
         public bool CollectRentInPrison { get; set; }
         public int TaxAmount { get; set; }
 
@@ -28,20 +26,21 @@
         /// </summary>
         public int ChanceCardPrisonCouponWorth { get; set; }
 
+        public int TressureTileReward { get; set; }
+
         public static GameConfig StandardConfig =>
             new GameConfig
             {
                 MaxPlayers = 4,
-                SentenceLength = 3,
-                PassGoReward = 5000,
-                PrisonBailCost = 5000,
                 StartMoney = 30000,
+                SentenceDuration = 3,
+                PassGoReward = 5000,
                 CollectRentInPrison = true,
                 TaxAmount = 3000,
-
-                ChanceCardMoneyReward = 8000,
+                TressureTileReward = 8000,
+                ChanceCardMoneyReward = 5000,
                 ChanceCardMoneyPenalty = 1500,
-                ChanceCardPrisonCouponWorth = 5000
+                ChanceCardPrisonCouponWorth = 4000
             };
     }
 }

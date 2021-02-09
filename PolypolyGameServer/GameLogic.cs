@@ -5,7 +5,7 @@ using static PolypolyGameServer.ServerBoard;
 
 namespace PolypolyGameServer
 {
-    public class GameLogic
+    class GameLogic
     {
         private enum PlayerChoice
         {
@@ -94,7 +94,7 @@ namespace PolypolyGameServer
                             if (jailCard)
                             {
                                 if (!gameServer.Players[currentPlayerId].hasJailCoupon)
-                                    SubtractPlayerMoney(currentPlayerId, gameConfig.PrisonBailCost, false);
+                                    SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardPrisonCouponWorth, false);
                                 else
                                     gameServer.Players[currentPlayerId].hasJailCoupon = false;
 
@@ -256,6 +256,9 @@ namespace PolypolyGameServer
                         Print("Skipping because " + currentPlayerId + " is in jail");
                         UpdatePlayerJailturns(currentPlayerId,
                             (byte) (gameServer.Players[currentPlayerId].JailTurns - 1));
+
+                        SyncronizeEffects();
+                        gameStates.AddLast(GameState.NextTurn);
                         break;
                     }
 
@@ -278,7 +281,7 @@ namespace PolypolyGameServer
                         turnCount++;
 
                         // increment player turn
-                        currentPlayerId = (byte)((currentPlayerId + 1) % gameServer.Players.Count);
+                        currentPlayerId = NextPlayerID();
                     }
 
                     if (hasGameStateUpdated) Print($"Turn {turnCount}, Player: {currentPlayerId}");
@@ -317,13 +320,13 @@ namespace PolypolyGameServer
 
                     break;
                 case TileType.Train:
-                    AddPlayerMoney(currentPlayerId, gameConfig.PassGoReward);
+                    AddPlayerMoney(currentPlayerId, gameConfig.TressureTileReward);
                     break;
                 case TileType.Tax:
                     SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount, true);
                     break;
                 case TileType.BigTax:
-                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount + gameConfig.PrisonBailCost, true);
+                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount * 2, true);
                     break;
                 case TileType.Upkeep:
                     SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount, true);
@@ -331,9 +334,9 @@ namespace PolypolyGameServer
                 case TileType.Property:
                     var property = serverBoard.PropertyTiles[position];
 
-                    var canAfford = gameServer.Players[playerID].Money >= property.BaseCost;
+                    bool canAfford = gameServer.Players[playerID].Money >= property.BaseCost;
 
-                    // unpurchased
+                    // unpurchased or owned by current player and building is maxed out.
                     if ((property.Owner == byte.MaxValue || property.Owner == currentPlayerId) && property.BuildingLevel != TileProperty.BuildingState.Level3)
                     {
                         MakePropertyOffer(playerID, property, canAfford);
@@ -348,7 +351,15 @@ namespace PolypolyGameServer
                     }
                     else if (property.Owner != currentPlayerId)
                     {
-                        var moneyPaid = SubtractPlayerMoney(currentPlayerId, property.Rent, true);
+                        int rentCost = property.Rent;
+
+                        if (gameServer.Players[currentPlayerId].hasDoubleRentCoupon)
+                        {
+                            rentCost *= 2;
+                            gameServer.Players[currentPlayerId].hasDoubleRentCoupon = false;
+                        }
+
+                        var moneyPaid = SubtractPlayerMoney(currentPlayerId, rentCost, true);
                         AddPlayerMoney(property.Owner, moneyPaid);
                         Print("Paid rent");
                     }
@@ -410,8 +421,10 @@ namespace PolypolyGameServer
                             AddPlayerMoney(currentPlayerId, gameConfig.PassGoReward);
                             break;
                         case Packet.ChanceCard.ForceAuction:
-                            TriggerAuction(0);
-                            Print("Forced auction");
+                            if (serverBoard.PropertyTiles.Any(p => p?.Owner == currentPlayerId))
+                            {
+                                TriggerAuction(0);
+                            }
                             break;
                     }
                     break;
@@ -420,8 +433,33 @@ namespace PolypolyGameServer
 
         private void ClearAnimationDone()
         {
-            foreach (var VARIABLE in gameServer.Players.Keys) gameServer.Players[VARIABLE].isAnimationDone = false;
+            foreach (var id in gameServer.Players.Keys) gameServer.Players[id].isAnimationDone = false;
             Print("Reset animation done signals");
+        }
+
+        private byte NextPlayerID()
+        {
+            byte newTurn = currentPlayerId;
+
+            int playerCount = gameServer.Players.Count;
+
+            int i = 0;
+            for (int id = newTurn; i < playerCount; id = (id + 1) % playerCount, i++)
+            {
+                // skip player who had turn now
+                if (i == 0)
+                    continue;
+
+                if (gameServer.Players[(byte)id].isBankrupt)
+                {
+                    continue;
+                }
+
+                newTurn = (byte)id;
+                break;
+            }
+
+            return newTurn;
         }
 
         /// <summary>
@@ -480,9 +518,9 @@ namespace PolypolyGameServer
         private void SendToJail(byte playerID)
         {
             gameServer.Players[playerID].Position = serverBoard.JailtileIndex;
-            gameServer.Players[playerID].JailTurns = gameConfig.SentenceLength;
+            gameServer.Players[playerID].JailTurns = gameConfig.SentenceDuration;
 
-            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, gameConfig.SentenceLength));
+            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, gameConfig.SentenceDuration));
             queuedPackets.Enqueue(Packet.Construct.UpdatePlayerPosition(playerID, serverBoard.JailtileIndex, Packet.MoveType.DirectMove));
 
             if (gameStates?.First?.Value != GameState.WaitingForAnimation)
@@ -591,7 +629,20 @@ namespace PolypolyGameServer
 
             if (subtractAmount < loss && triggerAuction)
             {
-                TriggerAuction(loss - subtractAmount);
+                int mostExpensive = serverBoard.PropertyTiles.Max(p => p is null ? 0 : p.Value);
+                int auctionAmount = loss - subtractAmount;
+
+                if (auctionAmount > mostExpensive)
+                {
+                    gameServer.Players[playerID].isBankrupt = true;
+                    Print($"{playerID} is now bankrupt");
+                    SetPlayerMoney(playerID, 0);
+                    queuedPackets.Enqueue(Packet.Construct.PlayerBankrupt(playerID));
+                }
+                else
+                {
+                    TriggerAuction(loss - subtractAmount);
+                }
 
                 return 0;
             }

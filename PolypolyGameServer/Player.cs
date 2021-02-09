@@ -22,6 +22,7 @@ namespace PolypolyGameServer
         public bool isAnimationDone;
         public bool isHost;
         public bool isReady;
+        public bool isBankrupt;
         public byte JailTurns;
         public int Money;
         public string Nickname = DEFAULT_NAME;

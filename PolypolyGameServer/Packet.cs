@@ -67,13 +67,11 @@ namespace PolypolyGameServer
             UpdatePlayerColor = 26, // ✓
             UpdateBoardProperty = 28, // ✓
             DrawChanceCard = 30, // ✓
-
             PropertyOffer = 32, // ✓, til når en spiller lander på en grund som ikke er købt eller de kan udvidde
-
             PrisonCardOffer =
                 34, // ✓, til når man er i fængsel og man kan vælge mellem at 1) købe et kort, 2) bruge et man har i forvejen, 3) rulle.
-            AuctionProperty = 36,
-            // mangler: når man skal sælge en grund fordi man ikke har nok penge
+            AuctionProperty = 36, // ✓
+            PlayerBankrupt = 38,
         }
 
         public static class Construct
@@ -85,6 +83,20 @@ namespace PolypolyGameServer
 
             public const int SIZE_UpdatePlayerPosition = sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte);
             public const int SIZE_PlayerConnected = sizeof(byte) + sizeof(byte);
+
+            /// <summary>
+            /// Used by server to signal when a player has gone bankrupt and is out of the game.
+            /// </summary>
+            /// <param name="playerID"></param>
+            /// <returns></returns>
+            public static byte[] PlayerBankrupt(byte playerID)
+            {
+                return new[]
+                {
+                    (byte)PacketType.PlayerBankrupt,
+                    playerID
+                };
+            }
 
             /// <summary>
             ///  Used by server.
@@ -184,6 +196,12 @@ namespace PolypolyGameServer
                 return new[] {(byte) PacketType.GameStarted};
             }
 
+            /// <summary>
+            /// Used by server to tell players that a player has to auction one of their properties.
+            /// </summary>
+            /// <param name="playerID"></param>
+            /// <param name="auctionValue"></param>
+            /// <returns></returns>
             public static byte[] AuctionProperty(byte playerID, int auctionValue)
             {
                 byte[] packet = new byte[sizeof(PacketType) + 1 + sizeof(int)];
@@ -195,6 +213,11 @@ namespace PolypolyGameServer
                 return packet;
             }
 
+            /// <summary>
+            /// Used by client to tell what property to auction.
+            /// </summary>
+            /// <param name="propertyIndex"></param>
+            /// <returns></returns>
             public static byte[] AuctionReply(byte propertyIndex)
             {
                 return new[] {
@@ -217,6 +240,11 @@ namespace PolypolyGameServer
                 };
             }
 
+            /// <summary>
+            /// Used by client to tell server who to kick.
+            /// </summary>
+            /// <param name="playerID"></param>
+            /// <returns></returns>
             public static byte[] KickPlayer(byte playerID)
             {
                 return new[]
@@ -226,6 +254,11 @@ namespace PolypolyGameServer
                 };
             }
 
+            /// <summary>
+            /// Used by server to tell clients to animate chancecard.
+            /// </summary>
+            /// <param name="chanceCard"></param>
+            /// <returns></returns>
             public static byte[] DrawChanceCard(ChanceCard chanceCard)
             {
                 return new[]
@@ -322,6 +355,10 @@ namespace PolypolyGameServer
                 return new[] {(byte) PacketType.ReadyPacket};
             }
 
+            /// <summary>
+            /// Used by client.
+            /// </summary>
+            /// <returns></returns>
             public static byte[] UnreadyPacket()
             {
                 return new[] {(byte) PacketType.UnreadyPacket};
@@ -466,6 +503,11 @@ namespace PolypolyGameServer
                 return packet;
             }
 
+            /// <summary>
+            /// Used by server to tell clients that a player has connected.
+            /// </summary>
+            /// <param name="playerID"></param>
+            /// <returns></returns>
             public static byte[] PlayerConnected(byte playerID)
             {
                 var packet = new byte[sizeof(PacketType) + 1];
@@ -493,6 +535,13 @@ namespace PolypolyGameServer
                 return packet;
             }
 
+            /// <summary>
+            /// Used by server to tell clients that a players balance has changed.
+            /// </summary>
+            /// <param name="playerID"></param>
+            /// <param name="newAmount"></param>
+            /// <param name="isIncreased"></param>
+            /// <returns></returns>
             public static byte[] PlayerUpdateMoney(byte playerID, int newAmount, bool isIncreased)
             {
                 byte[] packet = new byte[sizeof(PacketType) + 1 + sizeof(int) + sizeof(bool)];
@@ -568,6 +617,11 @@ namespace PolypolyGameServer
             #endregion
 
             #region For client
+
+            public static void PlayerBankrupt(NetworkStream stream, out byte playerID)
+            {
+                playerID = (byte)stream.ReadByte();
+            }
 
             public static void PropertyOffer(NetworkStream stream, out byte playerID, out ServerBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost,
                 out bool isAffordable)
