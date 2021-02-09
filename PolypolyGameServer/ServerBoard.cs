@@ -120,6 +120,8 @@ namespace PolypolyGameServer
                     0.25f * ((int)BuildingLevel - 1))
                 );
 
+            public int Value => BaseCost;
+
             public TileProperty(int cost)
             {
                 BaseCost = cost;

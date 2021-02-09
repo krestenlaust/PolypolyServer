@@ -15,7 +15,7 @@ namespace PolypolyGameServer
         private const int FramesPerSecondCap = 30;
 
         public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
-        private readonly byte hostID = 0;
+        private byte hostID = 0;
         private TcpListener tcpListener;
         private float fixedDeltaTime;
         private GameLogic logic;
@@ -57,6 +57,8 @@ namespace PolypolyGameServer
         /// <param name="cancellationToken"></param>
         public void Start(CancellationToken cancellationToken)
         {
+            Print("Version 1.0.0");
+
             StartAcceptingPlayers();
             tcpListener.BeginAcceptTcpClient(PlayerConnected, null);
 
@@ -173,143 +175,170 @@ namespace PolypolyGameServer
                 var playerIDs = Players.Keys.ToList();
                 foreach (byte ID in playerIDs)
                 {
-                    // Client disconnected, handle disconnection if channel is empty
-                    if (!Players[ID].NetClient.Connected && Players[ID].NetClient.Available == 0)
-                    {
-                        byte[] disconnectPacket;
+                    //if (Players[ID].NetClient.Available == 0)
+                    //    continue;
 
-                        // check if disconnected during game or not.
-                        if (!logic.isGameInProgress)
+                    while (Players[ID].NetClient.Available > 0)
+                    {
+                        NetworkStream stream = Players[ID].NetClient.GetStream();
+                        Packet.PacketType packetHeader = (Packet.PacketType)stream.ReadByte();
+                        byte[] broadcastPacket = null;
+
+                        Print($"[{ID}] {Enum.GetName(typeof(Packet.PacketType), packetHeader)}");
+                        switch (packetHeader)
                         {
-                            // Empty seat
-                            Players.Remove(ID);
+                            case Packet.PacketType.DicerollRequest:
+                                logic.ThrowDiceNetwork(ID);
+                                break;
+                            case Packet.PacketType.PlayerNickname:
+                                Packet.Deconstruct.PlayerNickname(stream, out var nickname);
+                                if (Players[ID].isReady)
+                                {
+                                    Print($"[{ID}] Recieved nickname request, but player is ready. Discarded.");
+                                    break;
+                                }
+
+                                if (nickname.Length > 15) nickname = nickname.Substring(0, 15);
+
+                                Players[ID].Nickname = nickname;
+                                Print($"[{ID}] Changed username to {nickname}");
+
+                                // Synkronisér brugernavn med andre brugere.
+                                broadcastPacket = Packet.Construct.UpdatePlayerNickname(nickname, ID);
+                                break;
+                            case Packet.PacketType.ReadyPacket:
+                                Players[ID].isReady = true;
+
+                                broadcastPacket = Packet.Construct.UpdatePlayerReady(ID, true);
+                                break;
+                            case Packet.PacketType.UnreadyPacket:
+                                Players[ID].isReady = false;
+
+                                broadcastPacket = Packet.Construct.UpdatePlayerReady(ID, false);
+                                break;
+                            case Packet.PacketType.StartGamePacket:
+                                if (!Players[ID].isHost || logic.isGameInProgress)
+                                    break;
+
+                                var playersAreReady = true;
+                                foreach (var player in Players.Values.ToList())
+                                {
+                                    if (!playersAreReady)
+                                        break;
+                                    playersAreReady = playersAreReady && (player.isReady || player.isHost);
+                                }
+
+                                broadcastPacket = Packet.Construct.GameStarted();
+                                logic.isGameInProgress = playersAreReady;
+
+                                break;
+                            case Packet.PacketType.LeaveGamePacket:
+                                DisconnectPlayer(ID);
+                                break;
+                            case Packet.PacketType.AnimationDone:
+                                Players[ID].isAnimationDone = true;
+
+                                break;
+                            case Packet.PacketType.ChangeColor:
+                                Packet.Deconstruct.ChangeColor(stream, out var color);
+
+                                Players[ID].Color = color;
+
+                                broadcastPacket = Packet.Construct.UpdatePlayerColor(ID, color);
+
+                                break;
+                            case Packet.PacketType.KickPlayer:
+                                Packet.Deconstruct.KickPlayer(stream, out var playerId);
+
+                                if (ID != hostID)
+                                    break;
+
+                                Players[playerId].NetClient?.Close();
+                                Players.Remove(playerId);
+
+                                broadcastPacket = Packet.Construct.PlayerDisconnected(playerId, true,
+                                    Packet.DisconnectReason.Kicked);
+                                break;
+                            case Packet.PacketType.PrisonReply:
+                                Packet.Deconstruct.PrisonReply(stream, out bool useCard);
+
+                                Players[ID].ReplyJailOffer = useCard;
+                                break;
+                            case Packet.PacketType.PropertyReply:
+                                Packet.Deconstruct.PropertyReply(stream, out bool purchase);
+
+                                Players[ID].ReplyPropertyOffer = purchase;
+                                break;
+                            case Packet.PacketType.AuctionReply:
+                                Packet.Deconstruct.AuctionReply(stream, out byte propertyIndex);
+
+                                Players[ID].ReplyAuctionIndex = propertyIndex;
+                                break;
                         }
 
-                        disconnectPacket = Packet.Construct.PlayerDisconnected(ID, !logic.isGameInProgress, Packet.DisconnectReason.LostConnection);
-
-                        BroadcastPacket(disconnectPacket);
-                        continue;
-                    }
-
-                    if (Players[ID].NetClient.Available == 0)
-                        continue;
-
-                    NetworkStream stream = Players[ID].NetClient.GetStream();
-                    Packet.PacketType packetHeader = (Packet.PacketType) stream.ReadByte();
-                    byte[] broadcastPacket = null;
-
-                    Print($"[{ID}] {Enum.GetName(typeof(Packet.PacketType), packetHeader)}");
-                    switch (packetHeader)
-                    {
-                        case Packet.PacketType.DicerollRequest:
-                            logic.ThrowDiceNetwork(ID);
-                            break;
-                        case Packet.PacketType.PlayerNickname:
-                            Packet.Deconstruct.PlayerNickname(stream, out var nickname);
-                            if (Players[ID].isReady)
-                            {
-                                Print($"[{ID}] Recieved nickname request, but player is ready. Discarded.");
-                                break;
-                            }
-
-                            if (nickname.Length > 15) nickname = nickname.Substring(0, 15);
-
-                            Players[ID].Nickname = nickname;
-                            Print($"[{ID}] Changed username to {nickname}");
-
-                            // Synkronisér brugernavn med andre brugere.
-                            broadcastPacket = Packet.Construct.UpdatePlayerNickname(nickname, ID);
-                            break;
-                        case Packet.PacketType.ReadyPacket:
-                            Players[ID].isReady = true;
-
-                            broadcastPacket = Packet.Construct.UpdatePlayerReady(ID, true);
-                            break;
-                        case Packet.PacketType.UnreadyPacket:
-                            Players[ID].isReady = false;
-
-                            broadcastPacket = Packet.Construct.UpdatePlayerReady(ID, false);
-                            break;
-                        case Packet.PacketType.StartGamePacket:
-                            if (!Players[ID].isHost || logic.isGameInProgress)
-                                break;
-
-                            var playersAreReady = true;
-                            foreach (var player in Players.Values.ToList())
-                            {
-                                if (!playersAreReady)
-                                    break;
-                                playersAreReady = playersAreReady && (player.isReady || player.isHost);
-                            }
-
-                            broadcastPacket = Packet.Construct.GameStarted();
-                            logic.isGameInProgress = playersAreReady;
-                            
-                            break;
-                        case Packet.PacketType.LeaveGamePacket:
-                            Players[ID].NetClient.Close();
-                            Players.Remove(ID);
-
-                            broadcastPacket =
-                                Packet.Construct.PlayerDisconnected(ID, true, Packet.DisconnectReason.Left);
-                            
-                            break;
-                        case Packet.PacketType.AnimationDone:
-                            Players[ID].isAnimationDone = true;
-                            
-                            break;
-                        case Packet.PacketType.ChangeColor:
-                            Packet.Deconstruct.ChangeColor(stream, out var color);
-
-                            Players[ID].Color = color;
-
-                            broadcastPacket = Packet.Construct.UpdatePlayerColor(ID, color);
-                            
-                            break;
-                        case Packet.PacketType.KickPlayer:
-                            Packet.Deconstruct.KickPlayer(stream, out var playerId);
-
-                            if (ID != hostID)
-                                break;
-
-                            broadcastPacket = Packet.Construct.PlayerDisconnected(playerId, true,
-                                Packet.DisconnectReason.Kicked);
-
-                            Players[playerId].NetClient.Close();
-                            Players.Remove(playerId);
-                            break;
-                        case Packet.PacketType.PrisonReply:
-                            Packet.Deconstruct.PrisonReply(stream, out var useCard);
-
-                            Players[ID].ReplyJailOffer = useCard;
-                            break;
-                        case Packet.PacketType.PropertyReply:
-                            Packet.Deconstruct.PropertyReply(stream, out var purchase);
-
-                            Players[ID].ReplyPropertyOffer = purchase;
-                            break;
-                    }
-
-                    if (!(broadcastPacket is null))
-                    {
-                        BroadcastPacket(broadcastPacket);
+                        if (!(broadcastPacket is null))
+                        {
+                            BroadcastPacket(broadcastPacket);
+                        }
                     }
                 }
 
                 if (logic.isGameInProgress)
-                    logic.FixedUpdate();
+                    logic.Update();
+            }
+        }
+
+        private void DisconnectPlayer(byte playerID)
+        {
+            Print("Player not responding, disconnected.");
+
+            Players.Remove(playerID);
+
+            // Host migration
+            if (hostID == playerID)
+            {
+                try
+                {
+                    var nextHost = Players.First();
+
+                    Print("Host migration to: " + nextHost.Key);
+                    nextHost.Value.isHost = true;
+                    hostID = nextHost.Key;
+                    BroadcastPacket(Packet.Construct.UpdateHost(nextHost.Key));
+                }
+                catch (Exception)
+                {
+                    Print("No new host found");
+                }
+            }
+
+            byte[] packet = Packet.Construct.PlayerDisconnected(playerID, true, Packet.DisconnectReason.LostConnection);
+
+            BroadcastPacket(packet);
+        }
+
+        public bool SendToPlayer(byte playerID, byte[] packet)
+        {
+            try
+            {
+                NetworkStream stream = Players[playerID].NetClient.GetStream();
+                stream.Write(packet, 0, packet.Length);
+                return true;
+            }
+            catch (IOException)
+            {
+                DisconnectPlayer(playerID);
+                return false;
             }
         }
 
         public void BroadcastPacket(byte[] packet)
         {
-            foreach (var item in Players)
-            {
-                if (item.Value.NetClient?.Connected != true)
-                    continue;
+            var players = Players.Keys.ToList();
 
-                var stream = item.Value.NetClient.GetStream();
-                if (stream?.CanWrite == true) stream.Write(packet, 0, packet.Length);
+            foreach (var item in players)
+            {
+                SendToPlayer(item, packet);
             }
         }
     }

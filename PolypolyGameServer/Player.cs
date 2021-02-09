@@ -2,7 +2,7 @@
 
 namespace PolypolyGameServer
 {
-    public enum TeamColor
+    public enum TeamColor : byte
     {
         Yellow = 0,
         Red = 1,

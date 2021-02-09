@@ -49,7 +49,7 @@ namespace PolypolyGameServer
             KickPlayer = 17, // ✓
             PrisonReply = 19, // ✓, om man gerne vil købe/bruge et kort eller rulle terninger, når man er i fængsel
             PropertyReply = 21, // ✓, om man vil købe eller ej
-            AuctionReply = 23, // 
+            AuctionReply = 23, // ✓
 
             // Host to client
             DicerollResult = 2, // ✓
@@ -71,8 +71,8 @@ namespace PolypolyGameServer
             PropertyOffer = 32, // ✓, til når en spiller lander på en grund som ikke er købt eller de kan udvidde
 
             PrisonCardOffer =
-                34 // ✓, til når man er i fængsel og man kan vælge mellem at 1) købe et kort, 2) bruge et man har i forvejen, 3) rulle.
-
+                34, // ✓, til når man er i fængsel og man kan vælge mellem at 1) købe et kort, 2) bruge et man har i forvejen, 3) rulle.
+            AuctionProperty = 36,
             // mangler: når man skal sælge en grund fordi man ikke har nok penge
         }
 
@@ -160,16 +160,6 @@ namespace PolypolyGameServer
                 return packet;
             }
 
-            public static byte[] AuctionReply(byte propertyIndex)
-            {
-                byte[] packet = new byte[sizeof(PacketType) + 1];
-
-                packet[0] = (byte)PacketType.AuctionReply;
-                packet[1] = propertyIndex;
-
-                return packet;
-            }
-
             /// <summary>
             ///     Used by client.
             /// </summary>
@@ -194,6 +184,25 @@ namespace PolypolyGameServer
                 return new[] {(byte) PacketType.GameStarted};
             }
 
+            public static byte[] AuctionProperty(byte playerID, int auctionValue)
+            {
+                byte[] packet = new byte[sizeof(PacketType) + 1 + sizeof(int)];
+
+                packet[0] = (byte)PacketType.AuctionProperty;
+                packet[1] = playerID;
+                BitConverter.GetBytes(auctionValue).CopyTo(packet, 2);
+
+                return packet;
+            }
+
+            public static byte[] AuctionReply(byte propertyIndex)
+            {
+                return new[] {
+                    (byte)PacketType.AuctionReply,
+                    propertyIndex
+                };
+            }
+
             /// <summary>
             ///     Used by client.
             /// </summary>
@@ -201,30 +210,29 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] ChangeColor(TeamColor color)
             {
-                var packet = new byte[sizeof(PacketType) + sizeof(TeamColor)];
-
-                packet[0] = (byte) PacketType.ChangeColor;
-                packet[1] = (byte) color;
-
-                return packet;
+                return new[]
+                {
+                    (byte)PacketType.ChangeColor,
+                    (byte)color
+                };
             }
 
             public static byte[] KickPlayer(byte playerID)
             {
-                var packet = new byte[sizeof(PacketType) + 1];
-                packet[0] = (byte) PacketType.KickPlayer;
-                packet[1] = playerID;
-
-                return packet;
+                return new[]
+                {
+                    (byte)PacketType.KickPlayer,
+                    playerID
+                };
             }
 
             public static byte[] DrawChanceCard(ChanceCard chanceCard)
             {
-                var packet = new byte[sizeof(PacketType) + sizeof(ChanceCard)];
-                packet[0] = (byte) PacketType.DrawChanceCard;
-                packet[1] = (byte) chanceCard;
-
-                return packet;
+                return new[]
+                {
+                    (byte)PacketType.DrawChanceCard,
+                    (byte)chanceCard
+                };
             }
 
             /// <summary>
@@ -517,6 +525,21 @@ namespace PolypolyGameServer
                 stream.Read(useCardBytes, 0, useCardBytes.Length);
 
                 useCard = BitConverter.ToBoolean(useCardBytes, 0);
+            }
+
+            public static void AuctionReply(NetworkStream stream, out byte propertyIndex)
+            {
+                propertyIndex = (byte)stream.ReadByte();
+            }
+
+            public static void AuctionProperty(NetworkStream stream, out byte playerID, out int auctionValue)
+            {
+                playerID = (byte)stream.ReadByte();
+
+                byte[] auctionValueBytes = new byte[sizeof(int)];
+                stream.Read(auctionValueBytes, 0, sizeof(int));
+
+                auctionValue = BitConverter.ToInt32(auctionValueBytes, 0);
             }
 
             /// <summary>

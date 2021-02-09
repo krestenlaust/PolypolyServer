@@ -10,7 +10,8 @@ namespace PolypolyGameServer
         private enum PlayerChoice
         {
             PropertyOffer,
-            JailOffer
+            JailOffer,
+            Auction
         }
 
         private enum GameState
@@ -26,25 +27,25 @@ namespace PolypolyGameServer
         public readonly GameConfig gameConfig = GameConfig.StandardConfig;
         public readonly ServerBoard serverBoard;
         public bool isGameInProgress { get; internal set; }
+        
+        private readonly GameServer gameServer;
+        private readonly Queue<byte[]> queuedPackets = new Queue<byte[]>();
         private readonly Random random = new Random();
         private TileProperty consideredProperty;
         private byte consideredPropertyPosition;
+        private int auctionAmount;
         private byte currentPlayerId;
         private bool extraTurn;
         private bool hasGameStateUpdated = true;
-
         /// <summary>
         ///     State after animation is done.
         /// </summary>
         private LinkedList<GameState> gameStates;
-
         private GameState previusGameState = GameState.WaitingForAnimation;
-        private (byte, byte) RecentDiceThrowResult;
+        private (byte, byte) recentDiceThrowResult;
         private float timeTillSkipAnimation = 8;
         private int turnCount = -1;
         private PlayerChoice waitingForChoice;
-        private readonly GameServer gameServer;
-        private readonly Queue<byte[]> queuedPackets = new Queue<byte[]>();
         
         public GameLogic(GameServer gameServer)
         {
@@ -57,7 +58,7 @@ namespace PolypolyGameServer
             gameServer.log.Print("[Game] " + value);
         }
 
-        public void FixedUpdate()
+        public void Update()
         {
             /* // annoying
             if (timeTillSkip > 0)
@@ -72,7 +73,6 @@ namespace PolypolyGameServer
             }
 
             GameState currentState = gameStates.First.Value;
-            Print(currentState.ToString());
             gameStates.RemoveFirst();
             hasGameStateUpdated = currentState != previusGameState;
             previusGameState = currentState;
@@ -94,7 +94,7 @@ namespace PolypolyGameServer
                             if (jailCard)
                             {
                                 if (!gameServer.Players[currentPlayerId].hasJailCoupon)
-                                    SubtractPlayerMoney(currentPlayerId, gameConfig.PrisonBailCost);
+                                    SubtractPlayerMoney(currentPlayerId, gameConfig.PrisonBailCost, false);
                                 else
                                     gameServer.Players[currentPlayerId].hasJailCoupon = false;
 
@@ -122,7 +122,7 @@ namespace PolypolyGameServer
                                 // upgrade building
                                 consideredProperty.BuildingLevel = (TileProperty.BuildingState)((byte)consideredProperty.BuildingLevel + 1);
                                 consideredProperty.Owner = currentPlayerId;
-                                SubtractPlayerMoney(currentPlayerId, consideredProperty.BaseCost);
+                                SubtractPlayerMoney(currentPlayerId, consideredProperty.BaseCost, false);
                                 UpdateBoardProperty(consideredPropertyPosition, consideredProperty);
                             }
                             
@@ -130,6 +130,47 @@ namespace PolypolyGameServer
 
                             consideredProperty = null;
                             gameServer.Players[currentPlayerId].ReplyPropertyOffer = null;
+                            break;
+                        case PlayerChoice.Auction:
+                            if (gameServer.Players[currentPlayerId].ReplyAuctionIndex is null)
+                            {
+                                gameStates.AddFirst(GameState.WaitingForPlayerChoice);
+                                break;
+                            }
+
+                            byte auctionIndex = gameServer.Players[currentPlayerId].ReplyAuctionIndex.Value;
+
+                            TileProperty propertyForAuction = serverBoard.PropertyTiles[auctionIndex];
+
+                            if (propertyForAuction?.Owner != currentPlayerId)
+                            {
+                                gameStates.AddFirst(GameState.WaitingForPlayerChoice);
+                                Print("Player does not own selected property");
+                                gameServer.Players[currentPlayerId].ReplyAuctionIndex = null;
+                                break;
+                            }
+
+                            int propertyValue = propertyForAuction.Value;
+
+                            if (propertyValue < auctionAmount)
+                            {
+                                gameStates.AddFirst(GameState.WaitingForPlayerChoice);
+                                Print("Property not worth enough");
+                                gameServer.Players[currentPlayerId].ReplyAuctionIndex = null;
+                                break;
+                            }
+
+                            propertyForAuction.BuildingLevel = TileProperty.BuildingState.Unpurchased;
+                            propertyForAuction.Owner = byte.MaxValue;
+
+                            AddPlayerMoney(currentPlayerId, propertyValue);
+                            UpdateBoardProperty(auctionIndex, propertyForAuction);
+
+                            SyncronizeEffects();
+
+                            Print("Auctioned building");
+
+                            gameServer.Players[currentPlayerId].ReplyAuctionIndex = null;
                             break;
                     }
 
@@ -139,8 +180,6 @@ namespace PolypolyGameServer
 
                     if (animationDone || timeTillSkipAnimation <= 0)
                     {
-                        //gameStates.Enqueue(GameState.AnimationDone);
-
                         if (turnCount == -1)
                         {
                             // First turn ever. Clients have loaded the scene.
@@ -168,7 +207,7 @@ namespace PolypolyGameServer
 
                     if (timeTillSkipAnimation <= 0) ThrowDiceNetwork(currentPlayerId);
 
-                    if (RecentDiceThrowResult.Item1 != 0)
+                    if (recentDiceThrowResult.Item1 != 0)
                     {
                         gameStates.AddLast(GameState.DiceThrown);
                         break;
@@ -180,12 +219,12 @@ namespace PolypolyGameServer
                 case GameState.DiceThrown:
                     gameStates.AddFirst(GameState.WaitingForAnimation);
 
-                    Print($"{currentPlayerId}'s dice: {RecentDiceThrowResult.Item1}, {RecentDiceThrowResult.Item2}");
+                    Print($"{currentPlayerId}'s dice: {recentDiceThrowResult.Item1}, {recentDiceThrowResult.Item2}");
 
                     extraTurn = false;
 
-                    var diceResult = (byte) (RecentDiceThrowResult.Item1 + RecentDiceThrowResult.Item2);
-                    var diceDouble = RecentDiceThrowResult.Item1 == RecentDiceThrowResult.Item2;
+                    var diceResult = (byte) (recentDiceThrowResult.Item1 + recentDiceThrowResult.Item2);
+                    var diceDouble = recentDiceThrowResult.Item1 == recentDiceThrowResult.Item2;
 
                     // Check if passed go
                     if (gameServer.Players[currentPlayerId].Position + diceResult >= serverBoard.Size)
@@ -231,8 +270,8 @@ namespace PolypolyGameServer
                     break;
                 case GameState.NextTurn:
                     // clear previus result
-                    RecentDiceThrowResult.Item1 = 0;
-                    RecentDiceThrowResult.Item2 = 0;
+                    recentDiceThrowResult.Item1 = 0;
+                    recentDiceThrowResult.Item2 = 0;
 
                     if (!extraTurn)
                     {
@@ -257,7 +296,7 @@ namespace PolypolyGameServer
 
             if (gameStates.Count == 0)
             {
-
+                Print("Error has occurred");
             }
         }
 
@@ -281,13 +320,13 @@ namespace PolypolyGameServer
                     AddPlayerMoney(currentPlayerId, gameConfig.PassGoReward);
                     break;
                 case TileType.Tax:
-                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount);
+                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount, true);
                     break;
                 case TileType.BigTax:
-                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount + gameConfig.PrisonBailCost);
+                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount + gameConfig.PrisonBailCost, true);
                     break;
                 case TileType.Upkeep:
-                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount);
+                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount, true);
                     break;
                 case TileType.Property:
                     var property = serverBoard.PropertyTiles[position];
@@ -309,7 +348,7 @@ namespace PolypolyGameServer
                     }
                     else if (property.Owner != currentPlayerId)
                     {
-                        var moneyPaid = SubtractPlayerMoney(currentPlayerId, property.Rent);
+                        var moneyPaid = SubtractPlayerMoney(currentPlayerId, property.Rent, true);
                         AddPlayerMoney(property.Owner, moneyPaid);
                         Print("Paid rent");
                     }
@@ -334,7 +373,7 @@ namespace PolypolyGameServer
 
                             break;
                         case Packet.ChanceCard.MoneyDeduct:
-                            SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardMoneyPenalty);
+                            SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardMoneyPenalty, true);
 
                             break;
                         case Packet.ChanceCard.DoubleRentCoupon:
@@ -371,6 +410,8 @@ namespace PolypolyGameServer
                             AddPlayerMoney(currentPlayerId, gameConfig.PassGoReward);
                             break;
                         case Packet.ChanceCard.ForceAuction:
+                            TriggerAuction(0);
+                            Print("Forced auction");
                             break;
                     }
                     break;
@@ -394,10 +435,10 @@ namespace PolypolyGameServer
                 return;
             }
 
-            RecentDiceThrowResult = RollDice();
+            recentDiceThrowResult = RollDice();
 
-            var packet = Packet.Construct.DicerollResult(playerID, RecentDiceThrowResult.Item1,
-                RecentDiceThrowResult.Item2);
+            var packet = Packet.Construct.DicerollResult(playerID, recentDiceThrowResult.Item1,
+                recentDiceThrowResult.Item2);
 
             gameServer.BroadcastPacket(packet);
         }
@@ -527,15 +568,33 @@ namespace PolypolyGameServer
             SetPlayerMoney(playerID, gameServer.Players[playerID].Money + income);
         }
 
+        private void TriggerAuction(int amountToAuction)
+        {
+            auctionAmount = amountToAuction;
+
+            gameStates.AddFirst(GameState.WaitingForPlayerChoice);
+            waitingForChoice = PlayerChoice.Auction;
+
+            queuedPackets.Enqueue(Packet.Construct.AuctionProperty(currentPlayerId, amountToAuction));
+            SyncronizeEffects();
+        }
+
         /// <summary>
         /// </summary>
         /// <param name="playerID"></param>
         /// <param name="loss"></param>
         /// <returns>The amount subtracted</returns>
-        private int SubtractPlayerMoney(byte playerID, int loss)
+        private int SubtractPlayerMoney(byte playerID, int loss, bool triggerAuction)
         {
             var subtractAmount = Math.Min(gameServer.Players[playerID].Money, loss);
             SetPlayerMoney(playerID, gameServer.Players[playerID].Money - subtractAmount);
+
+            if (subtractAmount < loss && triggerAuction)
+            {
+                TriggerAuction(loss - subtractAmount);
+
+                return 0;
+            }
 
             return subtractAmount;
         }
