@@ -28,6 +28,8 @@
 
         public int TressureTileReward { get; set; }
 
+        public int UpgradePropertyCost { get; set; }
+
         public static GameConfig StandardConfig =>
             new GameConfig
             {
@@ -40,7 +42,8 @@
                 TressureTileReward = 8000,
                 ChanceCardMoneyReward = 5000,
                 ChanceCardMoneyPenalty = 1500,
-                ChanceCardPrisonCouponWorth = 4000
+                ChanceCardPrisonCouponWorth = 4000,
+                UpgradePropertyCost = 5000,
             };
     }
 }

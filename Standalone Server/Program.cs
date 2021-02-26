@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using PolypolyGameServer;
 
 namespace Standalone_Server
 {
@@ -27,7 +26,7 @@ namespace Standalone_Server
 
             Console.WriteLine("To restart server - press R");
 
-            GameServer singleGameServer = new GameServer(address, port);
+            StandaloneGameServer singleGameServer = new StandaloneGameServer(address, port);
             StartGameServer(singleGameServer);
             
             ConsoleKey key;
@@ -48,7 +47,7 @@ namespace Standalone_Server
 
                         try
                         {
-                            singleGameServer = new GameServer(address, port);
+                            singleGameServer = new StandaloneGameServer(address, port);
                             StartGameServer(singleGameServer);
                         }
                         catch (SocketException)
@@ -60,7 +59,7 @@ namespace Standalone_Server
             } while (key != ConsoleKey.Q && key != ConsoleKey.Escape);
         }
 
-        private static void StartGameServer(GameServer gameServer)
+        private static void StartGameServer(StandaloneGameServer gameServer)
         {
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -68,7 +67,7 @@ namespace Standalone_Server
             tokens.Push(tokenSource);
         }
 
-        private static void StopGameServer(GameServer gameServer)
+        private static void StopGameServer(StandaloneGameServer gameServer)
         {
             tokens.Pop().Cancel();
         }

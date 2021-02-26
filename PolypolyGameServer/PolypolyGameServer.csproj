@@ -44,7 +44,7 @@
   <ItemGroup>
     <Compile Include="GameConfig.cs" />
     <Compile Include="GameLogic.cs" />
-    <Compile Include="GameServer.cs" />
+    <Compile Include="Lobby.cs" />
     <Compile Include="Packet.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="ServerBoard.cs" />

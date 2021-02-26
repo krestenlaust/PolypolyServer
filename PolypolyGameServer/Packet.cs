@@ -71,7 +71,10 @@ namespace PolypolyGameServer
             PrisonCardOffer =
                 34, // ✓, til når man er i fængsel og man kan vælge mellem at 1) købe et kort, 2) bruge et man har i forvejen, 3) rulle.
             AuctionProperty = 36, // ✓
-            PlayerBankrupt = 38,
+            PlayerBankrupt = 38, // ✓
+            UpdateGroupDoubleRent = 40, // ✓
+
+            GameOver = 42,
         }
 
         public static class Construct
@@ -83,6 +86,16 @@ namespace PolypolyGameServer
 
             public const int SIZE_UpdatePlayerPosition = sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte);
             public const int SIZE_PlayerConnected = sizeof(byte) + sizeof(byte);
+
+            public static byte[] UpdateGroupDoubleRent(byte groupID, bool status)
+            {
+                return new[]
+                {
+                    (byte)PacketType.UpdateGroupDoubleRent,
+                    groupID,
+                    status ? (byte)1 :(byte)0
+                };
+            }
 
             /// <summary>
             /// Used by server to signal when a player has gone bankrupt and is out of the game.
@@ -559,6 +572,12 @@ namespace PolypolyGameServer
         public static class Deconstruct
         {
             #region For server
+
+            public static void UpdateGroupDoubleRent(NetworkStream stream, out byte groupID, out bool status)
+            {
+                groupID = (byte)stream.ReadByte();
+                status = stream.ReadByte() == 1;
+            }
 
             public static void PropertyReply(NetworkStream stream, out bool purchase)
             {

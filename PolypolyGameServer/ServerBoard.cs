@@ -67,35 +67,37 @@ namespace PolypolyGameServer
             standardBoard.TileTypes[31] = TileType.Property;
 
             // Property tiles
-            standardBoard.PropertyTiles[1] = new TileProperty(3400);
-            standardBoard.PropertyTiles[2] = new TileProperty(2900);
-            standardBoard.PropertyTiles[3] = new TileProperty(2700);
+            standardBoard.PropertyTiles[1] = new TileProperty(3400, 0);
+            standardBoard.PropertyTiles[2] = new TileProperty(2900, 0);
+            standardBoard.PropertyTiles[3] = new TileProperty(2700, 0);
 
-            standardBoard.PropertyTiles[6] = new TileProperty(5600);
-            standardBoard.PropertyTiles[7] = new TileProperty(5000);
+            standardBoard.PropertyTiles[6] = new TileProperty(5600, 1);
+            standardBoard.PropertyTiles[7] = new TileProperty(5000, 1);
 
-            standardBoard.PropertyTiles[9] = new TileProperty(8200);
-            standardBoard.PropertyTiles[10] = new TileProperty(6400);
-            standardBoard.PropertyTiles[11] = new TileProperty(7100);
 
-            standardBoard.PropertyTiles[14] = new TileProperty(11700);
-            standardBoard.PropertyTiles[15] = new TileProperty(10400);
+            standardBoard.PropertyTiles[9] = new TileProperty(8200, 2);
+            standardBoard.PropertyTiles[10] = new TileProperty(6400, 2);
+            standardBoard.PropertyTiles[11] = new TileProperty(7100, 2);
 
-            standardBoard.PropertyTiles[17] = new TileProperty(5700);
-            standardBoard.PropertyTiles[18] = new TileProperty(4100);
-            standardBoard.PropertyTiles[19] = new TileProperty(6900);
+            standardBoard.PropertyTiles[14] = new TileProperty(11700, 3);
+            standardBoard.PropertyTiles[15] = new TileProperty(10400, 3);
 
-            standardBoard.PropertyTiles[21] = new TileProperty(6200);
-            standardBoard.PropertyTiles[22] = new TileProperty(6800);
-            standardBoard.PropertyTiles[23] = new TileProperty(8500);
 
-            standardBoard.PropertyTiles[25] = new TileProperty(13400);
+            standardBoard.PropertyTiles[17] = new TileProperty(5700, 4);
+            standardBoard.PropertyTiles[18] = new TileProperty(4100, 4);
+            standardBoard.PropertyTiles[19] = new TileProperty(6900, 4);
 
-            standardBoard.PropertyTiles[27] = new TileProperty(15200);
+            standardBoard.PropertyTiles[21] = new TileProperty(6200, 5);
+            standardBoard.PropertyTiles[22] = new TileProperty(6800, 5);
+            standardBoard.PropertyTiles[23] = new TileProperty(8500, 5);
 
-            standardBoard.PropertyTiles[29] = new TileProperty(7600);
-            standardBoard.PropertyTiles[30] = new TileProperty(8200);
-            standardBoard.PropertyTiles[31] = new TileProperty(7400);
+
+            standardBoard.PropertyTiles[25] = new TileProperty(13400, 6);
+            standardBoard.PropertyTiles[27] = new TileProperty(15200, 6);
+
+            standardBoard.PropertyTiles[29] = new TileProperty(7600, 7);
+            standardBoard.PropertyTiles[30] = new TileProperty(8200, 7);
+            standardBoard.PropertyTiles[31] = new TileProperty(7400, 7);
 
             return standardBoard;
         }
@@ -113,6 +115,7 @@ namespace PolypolyGameServer
             public BuildingState BuildingLevel = BuildingState.Unpurchased;
             public byte Owner = byte.MaxValue;
             public int BaseCost { get; }
+            public readonly byte GroupID;
 
             public int Rent =>
                 (int)Math.Round(
@@ -120,11 +123,14 @@ namespace PolypolyGameServer
                     0.25f * ((int)BuildingLevel - 1))
                 );
 
-            public int Value => BaseCost;
+            public int UpgradeCost => GameConfig.StandardConfig.UpgradePropertyCost;
 
-            public TileProperty(int cost)
+            public int Value => BaseCost + UpgradeCost * ((byte)BuildingLevel - 1);
+
+            public TileProperty(int cost, byte groupID)
             {
                 BaseCost = cost;
+                GroupID = groupID;
             }
 
             public TileProperty(int cost, byte owner, BuildingState buildingLevel)
