@@ -46,10 +46,9 @@ namespace PolypolyGameServer
             this.isHost = isHost;
         }
 
-        public Player(TcpClient NetClient, bool isHost, string Nickname)
+        public Player(TcpClient NetClient, string Nickname)
         {
             this.NetClient = NetClient;
-            this.isHost = isHost;
             this.Nickname = Nickname;
         }
     }

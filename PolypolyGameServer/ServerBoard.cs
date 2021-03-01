@@ -133,11 +133,12 @@ namespace PolypolyGameServer
                 GroupID = groupID;
             }
 
-            public TileProperty(int cost, byte owner, BuildingState buildingLevel)
+            public TileProperty(int cost, byte owner, BuildingState buildingLevel, byte groupID)
             {
                 BaseCost = cost;
                 Owner = owner;
                 BuildingLevel = buildingLevel;
+                GroupID = groupID;
             }
         }
     }

@@ -11,7 +11,7 @@ namespace PolypolyGameServer
     {
         public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
         internal SimpleLogger log;
-        private byte hostID = 0;
+        private byte? hostID = null;
         private TcpListener tcpListener;
         private GameLogic logic;
 
@@ -51,7 +51,7 @@ namespace PolypolyGameServer
         /// <param name="cancellationToken"></param>
         public void Start()
         {
-            Console.WriteLine("Version 1.1.0");
+            Console.WriteLine("Version 1.2.0");
 
             StartAcceptingPlayers();
             tcpListener.BeginAcceptTcpClient(PlayerConnected, null);
@@ -101,7 +101,7 @@ namespace PolypolyGameServer
                 stream.Write(otherPlayerColor, 0, otherPlayerColor.Length);
             }
 
-            var updateHostPacket = Packet.Construct.UpdateHost(hostID);
+            var updateHostPacket = Packet.Construct.UpdateHost(hostID.Value);
             stream.Write(updateHostPacket, 0, updateHostPacket.Length);
         }
 
@@ -112,6 +112,7 @@ namespace PolypolyGameServer
         private void PlayerConnected(IAsyncResult ar)
         {
             TcpClient netClient;
+
             try
             {
                 netClient = tcpListener?.EndAcceptTcpClient(ar);
@@ -126,16 +127,21 @@ namespace PolypolyGameServer
                 return;
             }
 
-            var playerID = (byte) Players.Count;
+            byte playerID = (byte)Players.Count;
 
-            var player = new Player(netClient, playerID == hostID, Player.DEFAULT_NAME + playerID);
+            Player player = new Player(netClient, Player.DEFAULT_NAME + playerID);
             Players[playerID] = player;
+
+            if (hostID is null)
+            {
+                MigrateHost(player, playerID);
+            }
 
             if (Players.Count < logic.gameConfig.MaxPlayers)
                 ListenForPlayer();
 
-            var stream = netClient.GetStream();
-            var updateIDPacket = Packet.Construct.AssignPlayerID(playerID);
+            NetworkStream stream = netClient.GetStream();
+            byte[] updateIDPacket = Packet.Construct.AssignPlayerID(playerID);
             stream.Write(updateIDPacket, 0, updateIDPacket.Length);
 
             Print($"[{netClient.Client.RemoteEndPoint}] Has connected and been assigned ID: {playerID}");
@@ -156,9 +162,6 @@ namespace PolypolyGameServer
             var playerIDs = Players.Keys.ToList();
             foreach (byte ID in playerIDs)
             {
-                //if (Players[ID].NetClient.Available == 0)
-                //    continue;
-
                 while (Players[ID].NetClient.Available > 0)
                 {
                     NetworkStream stream = Players[ID].NetClient.GetStream();
@@ -215,6 +218,7 @@ namespace PolypolyGameServer
                             break;
                         case Packet.PacketType.LeaveGamePacket:
                             DisconnectPlayer(ID);
+
                             break;
                         case Packet.PacketType.AnimationDone:
                             Players[ID].isAnimationDone = true;
@@ -281,20 +285,25 @@ namespace PolypolyGameServer
                 {
                     var nextHost = Players.First();
 
-                    Print("Host migration to: " + nextHost.Key);
-                    nextHost.Value.isHost = true;
-                    hostID = nextHost.Key;
-                    BroadcastPacket(Packet.Construct.UpdateHost(nextHost.Key));
+                    MigrateHost(nextHost.Value, nextHost.Key);
                 }
                 catch (Exception)
                 {
-                    Print("No new host found");
+                    hostID = null;
                 }
             }
 
             byte[] packet = Packet.Construct.PlayerDisconnected(playerID, true, Packet.DisconnectReason.LostConnection);
 
             BroadcastPacket(packet);
+        }
+
+        private void MigrateHost(Player newHost, byte newHostID)
+        {
+            Print("Host migration to: " + newHost);
+            newHost.isHost = true;
+            hostID = newHostID;
+            BroadcastPacket(Packet.Construct.UpdateHost(newHostID));
         }
 
         public bool SendToPlayer(byte playerID, byte[] packet)

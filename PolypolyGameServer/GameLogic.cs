@@ -205,7 +205,7 @@ namespace PolypolyGameServer
                         if (turnCount == -1)
                         {
                             // First turn ever. Clients have loaded the scene.
-                            Print("Game has started1");
+                            Print("Game has started");
 
                             SyncronizeBoard();
 

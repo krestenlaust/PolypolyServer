@@ -82,7 +82,7 @@ namespace PolypolyGameServer
             public const int SIZE_PlayerJail = sizeof(byte) + sizeof(byte) + sizeof(byte);
 
             public const int SIZE_UpdateBoardProperty =
-                sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(int);
+                sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(int) + sizeof(byte);
 
             public const int SIZE_UpdatePlayerPosition = sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte);
             public const int SIZE_PlayerConnected = sizeof(byte) + sizeof(byte);
@@ -331,15 +331,22 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdateBoardProperty(byte tileID, ServerBoard.TileProperty tile)
             {
-                var packet = new byte[SIZE_UpdateBoardProperty];
+                var packet = new byte[
+                    sizeof(PacketType) + 
+                    sizeof(byte) + 
+                    sizeof(byte) + 
+                    sizeof(ServerBoard.TileProperty.BuildingState) + 
+                    sizeof(byte) +
+                    sizeof(int)];
 
-                packet[0] = (byte) PacketType.UpdateBoardProperty;
+                packet[0] = (byte)PacketType.UpdateBoardProperty;
                 packet[1] = tileID;
                 packet[2] = tile.Owner;
-                packet[3] = (byte) tile.BuildingLevel;
+                packet[3] = (byte)tile.BuildingLevel;
+                packet[4] = tile.GroupID;
 
                 var baseRent = BitConverter.GetBytes(tile.BaseCost);
-                baseRent.CopyTo(packet, 4);
+                baseRent.CopyTo(packet, 5);
 
                 return packet;
             }
@@ -803,16 +810,17 @@ namespace PolypolyGameServer
             public static void UpdateBoardProperty(NetworkStream stream, out byte tileID,
                 out ServerBoard.TileProperty tile)
             {
-                tileID = (byte) stream.ReadByte();
-                var owner = (byte) stream.ReadByte();
-                var buildingState =
-                    (ServerBoard.TileProperty.BuildingState) stream.ReadByte();
+                tileID = (byte)stream.ReadByte();
+                byte owner = (byte)stream.ReadByte();
+                var buildingState = (ServerBoard.TileProperty.BuildingState) stream.ReadByte();
+
+                byte groupID = (byte)stream.ReadByte();
                 var baseRentBytes = new byte[sizeof(int)];
                 stream.Read(baseRentBytes, 0, sizeof(int));
 
                 var baseRent = BitConverter.ToInt32(baseRentBytes, 0);
 
-                tile = new ServerBoard.TileProperty(baseRent, owner, buildingState);
+                tile = new ServerBoard.TileProperty(baseRent, owner, buildingState, groupID);
             }
 
             public static void DrawChanceCard(NetworkStream stream, out ChanceCard chanceCard)
