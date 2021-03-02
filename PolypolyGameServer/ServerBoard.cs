@@ -79,8 +79,8 @@ namespace PolypolyGameServer
             standardBoard.PropertyTiles[10] = new TileProperty(6400, 2);
             standardBoard.PropertyTiles[11] = new TileProperty(7100, 2);
 
-            standardBoard.PropertyTiles[14] = new TileProperty(11700, 3);
-            standardBoard.PropertyTiles[15] = new TileProperty(10400, 3);
+            standardBoard.PropertyTiles[14] = new TileProperty(9000, 3);
+            standardBoard.PropertyTiles[15] = new TileProperty(8400, 3);
 
 
             standardBoard.PropertyTiles[17] = new TileProperty(5700, 4);
@@ -92,8 +92,8 @@ namespace PolypolyGameServer
             standardBoard.PropertyTiles[23] = new TileProperty(8500, 5);
 
 
-            standardBoard.PropertyTiles[25] = new TileProperty(13400, 6);
-            standardBoard.PropertyTiles[27] = new TileProperty(15200, 6);
+            standardBoard.PropertyTiles[25] = new TileProperty(9500, 6);
+            standardBoard.PropertyTiles[27] = new TileProperty(11000, 6);
 
             standardBoard.PropertyTiles[29] = new TileProperty(7600, 7);
             standardBoard.PropertyTiles[30] = new TileProperty(8200, 7);
