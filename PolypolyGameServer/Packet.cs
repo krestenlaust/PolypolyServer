@@ -6,7 +6,7 @@ namespace PolypolyGameServer
 {
     public static class Packet
     {
-        public enum ChanceCard
+        public enum ChanceCard : byte
         {
             MoneyAdd,
             TrainCoupon,
@@ -22,17 +22,24 @@ namespace PolypolyGameServer
             Blank
         }
 
-        public enum DisconnectReason
+        public enum DisconnectReason : byte
         {
             LostConnection = 1,
             Left = 2,
             Kicked = 3
         }
 
-        public enum MoveType
+        public enum MoveType : byte
         {
             Walk,
             DirectMove
+        }
+
+        public enum GameOverType : byte
+        {
+            Monopoly,
+            Time,
+            HostEnded
         }
 
         public enum PacketType : byte
@@ -108,6 +115,22 @@ namespace PolypolyGameServer
                 {
                     (byte)PacketType.PlayerBankrupt,
                     playerID
+                };
+            }
+
+            /// <summary>
+            /// Used by server to signal game has ended.
+            /// </summary>
+            /// <param name="gameOverType"></param>
+            /// <param name="winner"></param>
+            /// <returns></returns>
+            public static byte[] GameOver(GameOverType gameOverType, byte winner)
+            {
+                return new[]
+                {
+                    (byte)PacketType.GameOver,
+                    (byte)gameOverType,
+                    winner
                 };
             }
 
@@ -579,6 +602,17 @@ namespace PolypolyGameServer
         public static class Deconstruct
         {
             #region For server
+            /// <summary>
+            /// Used by client.
+            /// </summary>
+            /// <param name="gameOverType"></param>
+            /// <param name="winner"></param>
+            /// <returns></returns>
+            public static void GameOver(NetworkStream stream, out GameOverType gameOverType, out byte winner)
+            {
+                gameOverType = (GameOverType)stream.ReadByte();
+                winner = (byte)stream.ReadByte();
+            }
 
             public static void UpdateGroupDoubleRent(NetworkStream stream, out byte groupID, out bool status)
             {

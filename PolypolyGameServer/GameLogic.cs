@@ -130,7 +130,22 @@ namespace PolypolyGameServer
 
                                     // TODO: implement group trigger.
                                     // true if player owns all properties of this kind.
-                                    UpdateGroupMonopoly(consideredProperty.GroupID, IsGroupMonopolyActivated(consideredProperty.GroupID, consideredProperty.Owner));
+                                    bool groupMonopoly = IsGroupMonopolyActivated(consideredProperty.GroupID, consideredProperty.Owner);
+                                    UpdateGroupMonopoly(consideredProperty.GroupID, groupMonopoly);
+
+                                    if (groupMonopoly)
+                                    {
+                                        // check if other group is a monopoly group.
+                                        byte otherGroupID = (byte)(consideredProperty.GroupID - consideredProperty.GroupID % 2);
+                                        if (otherGroupID == consideredProperty.GroupID)
+                                            otherGroupID++;
+
+                                        // monopoly!
+                                        if (IsGroupMonopolyActivated(otherGroupID, consideredProperty.Owner))
+                                        {
+                                            GameFinished(Packet.GameOverType.Monopoly, consideredProperty.Owner);
+                                        }
+                                    }
                                 }
                                 else
                                 {
@@ -482,6 +497,13 @@ namespace PolypolyGameServer
             }
 
             return !groupTiles.Skip(1).Any(p => p.Owner != owner);
+        }
+        
+        private void GameFinished(Packet.GameOverType gameOverType, byte winner)
+        {
+            isGameInProgress = false;
+            Print("Game over! " + Enum.GetName(typeof(Packet.GameOverType), gameOverType) + " Winner: " + winner);
+            queuedPackets.Enqueue(Packet.Construct.GameOver(gameOverType, winner));
         }
 
         private bool IsGroupMonopolyActivated(byte groupID, byte owner) => !serverBoard.PropertyTiles.Where(p => p?.GroupID == groupID).Any(p => p.Owner != owner);
