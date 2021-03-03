@@ -77,31 +77,31 @@ namespace PolypolyGameServer
         /// </summary>
         private void IntroducePlayer(ref NetworkStream stream, byte playerID)
         {
-            var newPlayerPacket = Packet.Construct.PlayerConnected(playerID);
-            BroadcastPacket(newPlayerPacket); // ignored
+            byte[] newPlayerPacket = Packet.Construct.PlayerConnected(playerID);
+            BroadcastPacket(newPlayerPacket);
 
-            foreach (var otherID in Players.Keys.ToList())
+            foreach (byte otherID in Players.Keys.ToList())
             {
                 if (otherID == playerID)
                     continue;
 
-                var otherPlayerPacket = Packet.Construct.PlayerConnected(otherID);
+                byte[] otherPlayerPacket = Packet.Construct.PlayerConnected(otherID);
                 stream.Write(otherPlayerPacket, 0, otherPlayerPacket.Length);
 
-                var otherPlayerName = Packet.Construct.UpdatePlayerNickname(Players[otherID].Nickname, otherID);
+                byte[] otherPlayerName = Packet.Construct.UpdatePlayerNickname(Players[otherID].Nickname, otherID);
                 stream.Write(otherPlayerName, 0, otherPlayerName.Length);
 
                 if (Players[otherID].isReady)
                 {
-                    var otherPlayerReady = Packet.Construct.UpdatePlayerReady(otherID, true);
+                    byte[] otherPlayerReady = Packet.Construct.UpdatePlayerReady(otherID, true);
                     stream.Write(otherPlayerReady, 0, otherPlayerReady.Length);
                 }
 
-                var otherPlayerColor = Packet.Construct.UpdatePlayerColor(otherID, Players[otherID].Color);
+                byte[] otherPlayerColor = Packet.Construct.UpdatePlayerColor(otherID, Players[otherID].Color);
                 stream.Write(otherPlayerColor, 0, otherPlayerColor.Length);
             }
 
-            var updateHostPacket = Packet.Construct.UpdateHost(hostID.Value);
+            byte[] updateHostPacket = Packet.Construct.UpdateHost(hostID.Value);
             stream.Write(updateHostPacket, 0, updateHostPacket.Length);
         }
 

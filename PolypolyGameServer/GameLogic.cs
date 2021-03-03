@@ -96,7 +96,7 @@ namespace PolypolyGameServer
                                 if (!lobby.Players[currentPlayerId].hasJailCoupon)
                                     SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardPrisonCouponWorth, false);
                                 else
-                                    lobby.Players[currentPlayerId].hasJailCoupon = false;
+                                    UpdateJailCouponStatus(currentPlayerId, false);
 
                                 UpdatePlayerJailturns(currentPlayerId, 0);
 
@@ -400,7 +400,7 @@ namespace PolypolyGameServer
                         if (lobby.Players[currentPlayerId].hasDoubleRentCoupon)
                         {
                             rentCost *= 2;
-                            lobby.Players[currentPlayerId].hasDoubleRentCoupon = false;
+                            DoubleRentCouponStatus(currentPlayerId, false);
                         }
 
                         // is double rent.
@@ -438,7 +438,7 @@ namespace PolypolyGameServer
 
                             break;
                         case Packet.ChanceCard.DoubleRentCoupon:
-                            lobby.Players[currentPlayerId].hasDoubleRentCoupon = true;
+                            DoubleRentCouponStatus(currentPlayerId, true);
 
                             break;
                         case Packet.ChanceCard.PrisonCoupon:
@@ -449,8 +449,7 @@ namespace PolypolyGameServer
                             }
                             else
                             {
-                                lobby.Players[currentPlayerId].hasJailCoupon = true;
-                                // TODO: Network update
+                                UpdateJailCouponStatus(currentPlayerId, true);
                             }
 
                             break;
@@ -502,7 +501,7 @@ namespace PolypolyGameServer
         private void GameFinished(Packet.GameOverType gameOverType, byte winner)
         {
             isGameInProgress = false;
-            Print("Game over! " + Enum.GetName(typeof(Packet.GameOverType), gameOverType) + " Winner: " + winner);
+            Print("Game over! " + Enum.GetName(typeof(Packet.GameOverType), gameOverType) + ", winner: " + winner);
             queuedPackets.Enqueue(Packet.Construct.GameOver(gameOverType, winner));
         }
 
@@ -594,6 +593,13 @@ namespace PolypolyGameServer
         /// <param name="playerID"></param>
         private void SendToJail(byte playerID)
         {
+            // no jail for you sir!
+            if (lobby.Players[playerID].hasJailCoupon)
+            {
+                UpdateJailCouponStatus(playerID, false);
+                return;
+            }
+
             lobby.Players[playerID].Position = serverBoard.JailtileIndex;
             lobby.Players[playerID].JailTurns = gameConfig.SentenceDuration;
 
@@ -700,6 +706,20 @@ namespace PolypolyGameServer
             SyncronizeEffects();
         }
 
+        private void DoubleRentCouponStatus(byte playerID, bool status)
+        {
+            lobby.Players[playerID].hasDoubleRentCoupon = status;
+
+            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerDoubleRent(playerID, status));
+        }
+
+        private void UpdateJailCouponStatus(byte playerID, bool status)
+        {
+            lobby.Players[playerID].hasJailCoupon = status;
+
+            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerJailCoupon(playerID, status));
+        }
+
         /// <summary>
         /// </summary>
         /// <param name="playerID"></param>
@@ -711,7 +731,21 @@ namespace PolypolyGameServer
 
             if (lobby.Players[playerID].Money < 0 && triggerAuction)
             {
-                int mostExpensive = serverBoard.PropertyTiles.Max(p => p is null ? 0 : p.Value);
+                int mostExpensive = serverBoard.PropertyTiles.Max(p =>
+                {
+                    if (p is null)
+                    {
+                        return 0;
+                    }
+
+                    if (p.Owner != playerID)
+                    {
+                        return 0;
+                    }
+
+                    return p.Value;
+                });
+
                 int auctionAmount = Math.Abs(lobby.Players[playerID].Money);
 
                 if (auctionAmount > mostExpensive)
@@ -720,9 +754,8 @@ namespace PolypolyGameServer
                     Print($"{playerID} is now bankrupt");
                     SetPlayerMoney(playerID, 0);
                     queuedPackets.Enqueue(Packet.Construct.PlayerBankrupt(playerID));
-                    
+
                     // TODO: Maybe clear list too?
-                    gameStates.AddFirst(GameState.NextTurn);
                     return loss + lobby.Players[playerID].Money;
                 }
                 else

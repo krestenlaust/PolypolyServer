@@ -34,7 +34,7 @@
             new GameConfig
             {
                 MaxPlayers = 4,
-                StartMoney = 30000,
+                StartMoney = 25000,
                 SentenceDuration = 3,
                 PassGoReward = 5000,
                 CollectRentInPrison = true,

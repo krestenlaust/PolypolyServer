@@ -80,8 +80,10 @@ namespace PolypolyGameServer
             AuctionProperty = 36, // ✓
             PlayerBankrupt = 38, // ✓
             UpdateGroupDoubleRent = 40, // ✓
+            GameOver = 42, // ✓
+            UpdatePlayerDoubleRent = 44, // ✓
+            UpdatePlayerJailCoupon = 46, // ✓
 
-            GameOver = 42,
         }
 
         public static class Construct
@@ -93,6 +95,26 @@ namespace PolypolyGameServer
 
             public const int SIZE_UpdatePlayerPosition = sizeof(byte) + sizeof(byte) + sizeof(byte) + sizeof(byte);
             public const int SIZE_PlayerConnected = sizeof(byte) + sizeof(byte);
+
+            public static byte[] UpdatePlayerDoubleRent(byte playerID, bool status)
+            {
+                return new byte[]
+                {
+                    (byte)PacketType.UpdatePlayerDoubleRent,
+                    playerID,
+                    (byte)(status ? 1 : 0)
+                };
+            }
+
+            public static byte[] UpdatePlayerJailCoupon(byte playerID, bool status)
+            {
+                return new byte[]
+                {
+                    (byte)PacketType.UpdatePlayerJailCoupon,
+                    playerID,
+                    (byte)(status ? 1 : 0)
+                };
+            }
 
             public static byte[] UpdateGroupDoubleRent(byte groupID, bool status)
             {
@@ -612,6 +634,18 @@ namespace PolypolyGameServer
             {
                 gameOverType = (GameOverType)stream.ReadByte();
                 winner = (byte)stream.ReadByte();
+            }
+
+            public static void UpdatePlayerDoubleRent(NetworkStream stream, out byte playerID, out bool status)
+            {
+                playerID = (byte)stream.ReadByte();
+                status = stream.ReadByte() == 1;
+            }
+
+            public static void UpdatePlayerJailCoupon(NetworkStream stream, out byte playerID, out bool status)
+            {
+                playerID = (byte)stream.ReadByte();
+                status = stream.ReadByte() == 1;
             }
 
             public static void UpdateGroupDoubleRent(NetworkStream stream, out byte groupID, out bool status)
