@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client.cs" />
     <Compile Include="GameConfig.cs" />
     <Compile Include="GameLogic.cs" />
     <Compile Include="Lobby.cs" />

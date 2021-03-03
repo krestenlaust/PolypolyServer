@@ -42,9 +42,11 @@ namespace PolypolyGameServer
             HostEnded
         }
 
-        public enum PacketType : byte
+        /// <summary>
+        /// Client to host.
+        /// </summary>
+        public enum ClientPacketType : byte
         {
-            // Client to host
             DicerollRequest = 1, // ✓
             PlayerNickname = 3, // ✓, tells server clients nickname.
             ReadyPacket = 5, // ✓
@@ -57,8 +59,13 @@ namespace PolypolyGameServer
             PrisonReply = 19, // ✓, om man gerne vil købe/bruge et kort eller rulle terninger, når man er i fængsel
             PropertyReply = 21, // ✓, om man vil købe eller ej
             AuctionReply = 23, // ✓
+        }
 
-            // Host to client
+        /// <summary>
+        /// Host to client.
+        /// </summary>
+        public enum ServerPacketType : byte
+        {
             DicerollResult = 2, // ✓
             UpdatePlayerTurn = 4, // ✓
             UpdatePlayerNickname = 6, // ✓
@@ -83,7 +90,6 @@ namespace PolypolyGameServer
             GameOver = 42, // ✓
             UpdatePlayerDoubleRent = 44, // ✓
             UpdatePlayerJailCoupon = 46, // ✓
-
         }
 
         public static class Construct
@@ -100,7 +106,7 @@ namespace PolypolyGameServer
             {
                 return new byte[]
                 {
-                    (byte)PacketType.UpdatePlayerDoubleRent,
+                    (byte)ServerPacketType.UpdatePlayerDoubleRent,
                     playerID,
                     (byte)(status ? 1 : 0)
                 };
@@ -110,7 +116,7 @@ namespace PolypolyGameServer
             {
                 return new byte[]
                 {
-                    (byte)PacketType.UpdatePlayerJailCoupon,
+                    (byte)ServerPacketType.UpdatePlayerJailCoupon,
                     playerID,
                     (byte)(status ? 1 : 0)
                 };
@@ -120,7 +126,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.UpdateGroupDoubleRent,
+                    (byte)ServerPacketType.UpdateGroupDoubleRent,
                     groupID,
                     status ? (byte)1 :(byte)0
                 };
@@ -135,7 +141,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.PlayerBankrupt,
+                    (byte)ServerPacketType.PlayerBankrupt,
                     playerID
                 };
             }
@@ -150,7 +156,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.GameOver,
+                    (byte)ServerPacketType.GameOver,
                     (byte)gameOverType,
                     winner
                 };
@@ -167,10 +173,10 @@ namespace PolypolyGameServer
             public static byte[] PropertyOffer(byte playerID, ServerBoard.TileProperty.BuildingState buildingState, int baseRent,
                 int cost, bool isAffordable)
             {
-                var packet = new byte[sizeof(PacketType) + sizeof(byte) + sizeof(ServerBoard.TileProperty.BuildingState) +
+                var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(ServerBoard.TileProperty.BuildingState) +
                                       sizeof(int) + sizeof(int) + sizeof(bool)];
 
-                packet[0] = (byte) PacketType.PropertyOffer;
+                packet[0] = (byte) ServerPacketType.PropertyOffer;
                 packet[1] = playerID;
                 packet[2] = (byte) buildingState;
 
@@ -194,7 +200,7 @@ namespace PolypolyGameServer
             {
                 var packet = new byte[sizeof(byte) + sizeof(bool)];
 
-                packet[0] = (byte) PacketType.PrisonCardOffer;
+                packet[0] = (byte) ServerPacketType.PrisonCardOffer;
                 packet[1] = BitConverter.GetBytes(hasCard)[0];
 
                 return packet;
@@ -207,9 +213,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] PrisonReply(bool useCard)
             {
-                var packet = new byte[sizeof(PacketType) + sizeof(bool)];
+                var packet = new byte[sizeof(ServerPacketType) + sizeof(bool)];
 
-                packet[0] = (byte) PacketType.PrisonReply;
+                packet[0] = (byte)ClientPacketType.PrisonReply;
                 packet[1] = BitConverter.GetBytes(useCard)[0];
 
                 return packet;
@@ -222,9 +228,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] PropertyReply(bool purchase)
             {
-                byte[] packet = new byte[sizeof(PacketType) + sizeof(bool)];
+                byte[] packet = new byte[sizeof(ServerPacketType) + sizeof(bool)];
 
-                packet[0] = (byte) PacketType.PropertyReply;
+                packet[0] = (byte)ClientPacketType.PropertyReply;
                 packet[1] = BitConverter.GetBytes(purchase)[0];
 
                 return packet;
@@ -235,7 +241,7 @@ namespace PolypolyGameServer
             /// </summary>
             public static byte[] AnimationDone()
             {
-                return new[] {(byte) PacketType.AnimationDone};
+                return new[] {(byte)ClientPacketType.AnimationDone};
             }
 
             /// <summary>
@@ -243,7 +249,7 @@ namespace PolypolyGameServer
             /// </summary>
             public static byte[] StartGame()
             {
-                return new[] {(byte) PacketType.StartGamePacket};
+                return new[] {(byte)ClientPacketType.StartGamePacket};
             }
 
             /// <summary>
@@ -251,7 +257,7 @@ namespace PolypolyGameServer
             /// </summary>
             public static byte[] GameStarted()
             {
-                return new[] {(byte) PacketType.GameStarted};
+                return new[] {(byte) ServerPacketType.GameStarted};
             }
 
             /// <summary>
@@ -262,9 +268,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] AuctionProperty(byte playerID, int auctionValue)
             {
-                byte[] packet = new byte[sizeof(PacketType) + 1 + sizeof(int)];
+                byte[] packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(int)];
 
-                packet[0] = (byte)PacketType.AuctionProperty;
+                packet[0] = (byte)ServerPacketType.AuctionProperty;
                 packet[1] = playerID;
                 BitConverter.GetBytes(auctionValue).CopyTo(packet, 2);
 
@@ -279,7 +285,7 @@ namespace PolypolyGameServer
             public static byte[] AuctionReply(byte propertyIndex)
             {
                 return new[] {
-                    (byte)PacketType.AuctionReply,
+                    (byte)ClientPacketType.AuctionReply,
                     propertyIndex
                 };
             }
@@ -293,7 +299,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.ChangeColor,
+                    (byte)ClientPacketType.ChangeColor,
                     (byte)color
                 };
             }
@@ -307,7 +313,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.KickPlayer,
+                    (byte)ClientPacketType.KickPlayer,
                     playerID
                 };
             }
@@ -321,7 +327,7 @@ namespace PolypolyGameServer
             {
                 return new[]
                 {
-                    (byte)PacketType.DrawChanceCard,
+                    (byte)ServerPacketType.DrawChanceCard,
                     (byte)chanceCard
                 };
             }
@@ -334,9 +340,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdatePlayerColor(byte playerID, TeamColor color)
             {
-                var packet = new byte[sizeof(PacketType) + 1 + sizeof(TeamColor)];
+                var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(TeamColor)];
 
-                packet[0] = (byte) PacketType.UpdatePlayerColor;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerColor;
                 packet[1] = playerID;
                 packet[2] = (byte) color;
 
@@ -350,9 +356,9 @@ namespace PolypolyGameServer
             /// <param name="jailTurnsLeft"></param>
             public static byte[] PlayerJail(byte playerID, byte jailTurnsLeft)
             {
-                var packet = new byte[sizeof(PacketType) + 2];
+                var packet = new byte[sizeof(ServerPacketType) + 2];
 
-                packet[0] = (byte) PacketType.PlayerJail;
+                packet[0] = (byte) ServerPacketType.PlayerJail;
                 packet[1] = playerID;
                 packet[2] = jailTurnsLeft;
 
@@ -365,7 +371,7 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] DicerollRequest()
             {
-                return new byte[] { (byte)PacketType.DicerollRequest };
+                return new byte[] { (byte)ClientPacketType.DicerollRequest };
             }
 
             /// <summary>
@@ -377,14 +383,14 @@ namespace PolypolyGameServer
             public static byte[] UpdateBoardProperty(byte tileID, ServerBoard.TileProperty tile)
             {
                 var packet = new byte[
-                    sizeof(PacketType) + 
+                    sizeof(ServerPacketType) + 
                     sizeof(byte) + 
                     sizeof(byte) + 
                     sizeof(ServerBoard.TileProperty.BuildingState) + 
                     sizeof(byte) +
                     sizeof(int)];
 
-                packet[0] = (byte)PacketType.UpdateBoardProperty;
+                packet[0] = (byte)ServerPacketType.UpdateBoardProperty;
                 packet[1] = tileID;
                 packet[2] = tile.Owner;
                 packet[3] = (byte)tile.BuildingLevel;
@@ -403,9 +409,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdatePlayerTurn(byte playerID)
             {
-                var packet = new byte[sizeof(PacketType) + sizeof(byte)];
+                var packet = new byte[sizeof(ServerPacketType) + sizeof(byte)];
 
-                packet[0] = (byte) PacketType.UpdatePlayerTurn;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerTurn;
                 packet[1] = playerID;
 
                 return packet;
@@ -417,7 +423,7 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] ReadyPacket()
             {
-                return new[] {(byte) PacketType.ReadyPacket};
+                return new[] {(byte)ClientPacketType.ReadyPacket};
             }
 
             /// <summary>
@@ -426,7 +432,7 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UnreadyPacket()
             {
-                return new[] {(byte) PacketType.UnreadyPacket};
+                return new[] {(byte)ClientPacketType.UnreadyPacket};
             }
 
 
@@ -438,9 +444,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdatePlayerReady(byte playerID, bool readyStatus)
             {
-                var packet = new byte[sizeof(PacketType) + 1 + sizeof(bool)];
+                var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(bool)];
 
-                packet[0] = (byte) PacketType.UpdatePlayerReady;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerReady;
                 packet[1] = playerID;
                 packet[2] = BitConverter.GetBytes(readyStatus)[0];
 
@@ -454,7 +460,7 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] LeaveGamePacket()
             {
-                return new[] {(byte) PacketType.LeaveGamePacket};
+                return new[] {(byte)ClientPacketType.LeaveGamePacket};
             }
 
             /// <summary>
@@ -472,7 +478,7 @@ namespace PolypolyGameServer
                     sizeof(int) +
                     nicknameEncoded.Length];
 
-                packet[0] = (byte) PacketType.PlayerNickname;
+                packet[0] = (byte)ClientPacketType.PlayerNickname;
                 lengthBytes.CopyTo(packet, 1);
                 nicknameEncoded.CopyTo(packet, 5);
 
@@ -488,9 +494,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] DicerollResult(byte playerID, byte die1Result, byte die2Result)
             {
-                var packet = new byte[sizeof(PacketType) + 1 + 2];
+                var packet = new byte[sizeof(ServerPacketType) + 1 + 2];
 
-                packet[0] = (byte) PacketType.DicerollResult;
+                packet[0] = (byte) ServerPacketType.DicerollResult;
                 packet[1] = playerID;
                 packet[2] = die1Result;
                 packet[3] = die2Result;
@@ -509,9 +515,9 @@ namespace PolypolyGameServer
                 var nicknameEncoded = Encoding.UTF8.GetBytes(nickname);
                 var lengthBytes = BitConverter.GetBytes(nicknameEncoded.Length);
 
-                var packet = new byte[sizeof(PacketType) + sizeof(byte) + sizeof(int) + nicknameEncoded.Length];
+                var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(int) + nicknameEncoded.Length];
 
-                packet[0] = (byte) PacketType.UpdatePlayerNickname;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerNickname;
                 packet[1] = playerID;
 
                 lengthBytes.CopyTo(packet, 2);
@@ -527,8 +533,8 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] AssignPlayerID(byte playerID)
             {
-                var packet = new byte[sizeof(PacketType) + 1];
-                packet[0] = (byte) PacketType.AssignPlayerID;
+                var packet = new byte[sizeof(ServerPacketType) + 1];
+                packet[0] = (byte) ServerPacketType.AssignPlayerID;
                 packet[1] = playerID;
 
                 return packet;
@@ -541,9 +547,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdateHost(byte playerID)
             {
-                var packet = new byte[sizeof(PacketType) + 1];
+                var packet = new byte[sizeof(ServerPacketType) + 1];
 
-                packet[0] = (byte) PacketType.UpdateHost;
+                packet[0] = (byte) ServerPacketType.UpdateHost;
                 packet[1] = playerID;
 
                 return packet;
@@ -558,9 +564,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] UpdatePlayerPosition(byte playerID, byte newPosition, MoveType moveType)
             {
-                var packet = new byte[sizeof(PacketType) + 2 + sizeof(MoveType)];
+                var packet = new byte[sizeof(ServerPacketType) + 2 + sizeof(MoveType)];
 
-                packet[0] = (byte) PacketType.UpdatePlayerPosition;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerPosition;
                 packet[1] = playerID;
                 packet[2] = newPosition;
                 packet[3] = (byte) moveType;
@@ -575,8 +581,8 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] PlayerConnected(byte playerID)
             {
-                var packet = new byte[sizeof(PacketType) + 1];
-                packet[0] = (byte) PacketType.PlayerConnected;
+                var packet = new byte[sizeof(ServerPacketType) + 1];
+                packet[0] = (byte) ServerPacketType.PlayerConnected;
                 packet[1] = playerID;
 
                 return packet;
@@ -591,8 +597,8 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] PlayerDisconnected(byte playerID, bool permanent, DisconnectReason disconnectReason)
             {
-                var packet = new byte[sizeof(PacketType) + 1 + sizeof(bool) + sizeof(DisconnectReason)];
-                packet[0] = (byte) PacketType.PlayerDisconnected;
+                var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(bool) + sizeof(DisconnectReason)];
+                packet[0] = (byte) ServerPacketType.PlayerDisconnected;
                 packet[1] = playerID;
                 packet[2] = BitConverter.GetBytes(permanent)[0];
                 packet[3] = (byte) disconnectReason;
@@ -609,9 +615,9 @@ namespace PolypolyGameServer
             /// <returns></returns>
             public static byte[] PlayerUpdateMoney(byte playerID, int newAmount, bool isIncreased)
             {
-                byte[] packet = new byte[sizeof(PacketType) + 1 + sizeof(int) + sizeof(bool)];
+                byte[] packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(int) + sizeof(bool)];
              
-                packet[0] = (byte) PacketType.UpdatePlayerMoney;
+                packet[0] = (byte) ServerPacketType.UpdatePlayerMoney;
                 packet[1] = playerID;
                 var newAmountBytes = BitConverter.GetBytes(newAmount);
                 newAmountBytes.CopyTo(packet, 2);
