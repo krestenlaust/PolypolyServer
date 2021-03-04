@@ -13,3 +13,4 @@ C:\Users\kress\Documents\Unity Projects\Monopoly\Server\PolypolyGameServer\obj\D
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.pdb
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\PolypolyGameServer\bin\Debug\PolypolyGameServer.dll
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\PolypolyGameServer\bin\Debug\PolypolyGameServer.pdb
+C:\Users\kress\Documents\Unity Projects\Monopoly\Server\PolypolyGameServer\obj\Debug\PolypolyGameServer.csprojAssemblyReference.cache

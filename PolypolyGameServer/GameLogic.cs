@@ -376,7 +376,11 @@ namespace PolypolyGameServer
                     SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount * 2, true);
                     break;
                 case TileType.Upkeep:
-                    SubtractPlayerMoney(currentPlayerId, gameConfig.TaxAmount, true);
+                    int ownedProperties = ServerBoard.PropertyTiles.Count(p => p?.Owner == currentPlayerId);
+
+                    int upkeepCost = gameConfig.TaxAmount / 5 * ownedProperties;
+                    
+                    SubtractPlayerMoney(currentPlayerId, upkeepCost, true);
                     break;
                 case TileType.Property:
                     TileProperty property = ServerBoard.PropertyTiles[position];
@@ -386,7 +390,9 @@ namespace PolypolyGameServer
                     // unpurchased or owned by current player and building is maxed out.
                     if ((property.Owner == byte.MaxValue || property.Owner == currentPlayerId) && property.BuildingLevel != TileProperty.BuildingState.Level3)
                     {
-                        MakePropertyOffer(currentPlayerId, property, canAfford);
+                        int cost = property.Owner == byte.MaxValue ? property.BaseCost : property.UpgradeCost;
+
+                        MakePropertyOffer(currentPlayerId, property, canAfford, cost);
 
                         if (!canAfford) break;
 
@@ -731,10 +737,10 @@ namespace PolypolyGameServer
             queuedPackets.Enqueue(Packet.Construct.PrisonCardOffer(Players[playerID].hasJailCoupon));
         }
 
-        private void MakePropertyOffer(byte playerID, TileProperty property, bool canAfford)
+        private void MakePropertyOffer(byte playerID, TileProperty property, bool canAfford, int cost)
         {
             queuedPackets.Enqueue(Packet.Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent,
-                property.BaseCost, canAfford));
+                cost, canAfford));
         }
 
         private void UpdateGroupMonopoly(byte groupID, bool status)

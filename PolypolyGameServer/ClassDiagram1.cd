@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PolypolyGameServer.Client" Collapsed="true">
+    <Position X="10.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAAAAAAAABAAGAABAAAAAIAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Client.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.GameLogic">
+    <Position X="7" Y="1.5" Width="1.5" />
+    <NestedTypes>
+      <Enum Name="PolypolyGameServer.GameLogic.PlayerChoice" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>GameLogic.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.GameLogic.GameState" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>GameLogic.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>MABIRgQAQpAAQAAwUgICAACACABmDAAQGESBBIQEJAg=</HashCode>
+      <FileName>GameLogic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.Lobby">
+    <Position X="8.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAhQAAAiAABAAAASAECAABFAgIAAAAKAABEAAUAAA=</HashCode>
+      <FileName>Lobby.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.Packet">
+    <Position X="5.25" Y="1.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="PolypolyGameServer.Packet.ChanceCard" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.Packet.DisconnectReason" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.Packet.MoveType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.Packet.GameOverType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.Packet.ClientPacketType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PolypolyGameServer.Packet.ServerPacketType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Class Name="PolypolyGameServer.Packet.Construct" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="PolypolyGameServer.Packet.Deconstruct" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packet.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Packet.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.Player" Collapsed="true">
+    <Position X="10.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgQEIgAAAAAAABgAAAAAAAQAAIAAAAAQAAAAEAAAAA=</HashCode>
+      <FileName>Player.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.ServerBoard" Collapsed="true">
+    <Position X="10.5" Y="3.25" Width="1.5" />
+    <NestedTypes>
+      <Enum Name="PolypolyGameServer.ServerBoard.TileType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>ServerBoard.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Class Name="PolypolyGameServer.ServerBoard.TileProperty" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>ServerBoard.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAEAAAIAAAAgAAAAAAAAAAABAAAAAAAAAAAAAAAkAA=</HashCode>
+      <FileName>ServerBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PolypolyGameServer.SimpleLogger">
+    <Position X="3.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAA=</HashCode>
+      <FileName>SimpleLogger.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="PolypolyGameServer.GameConfig">
+    <Position X="12.75" Y="1.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAgABAAAAIAAAAACgAQAQAAAAAAAQAAAgAAAACEA=</HashCode>
+      <FileName>GameConfig.cs</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Enum Name="PolypolyGameServer.TeamColor">
+    <Position X="3.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAADAAAAA=</HashCode>
+      <FileName>Client.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
