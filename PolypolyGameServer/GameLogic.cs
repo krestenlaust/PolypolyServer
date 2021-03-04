@@ -6,7 +6,7 @@ using static PolypolyGameServer.ServerBoard;
 
 namespace PolypolyGameServer
 {
-    class GameLogic
+    public class GameLogic
     {
         private enum PlayerChoice
         {
@@ -62,7 +62,7 @@ namespace PolypolyGameServer
 
         private void Print(string value)
         {
-            lobby.log.Print("[Game] " + value);
+            lobby.log?.Print("[Game] " + value);
         }
 
         public void UpdateState()
@@ -110,7 +110,7 @@ namespace PolypolyGameServer
                                 Print($"[{currentPlayerId}] Removed player from jail");
                             }
 
-                            ThrowDiceNetwork(currentPlayerId);
+                            ThrowDiceNetwork(currentPlayerId, GetDiceResult());
                             Players[currentPlayerId].ReplyJailOffer = null;
 
                             gameStates.AddLast(GameState.DiceThrown);
@@ -250,8 +250,10 @@ namespace PolypolyGameServer
                     if (hasGameStateUpdated) 
                         Print("Waiting for dice throw");
 
-                    if (timeTillSkipAnimation <= 0) 
-                        ThrowDiceNetwork(currentPlayerId);
+                    if (timeTillSkipAnimation <= 0)
+                    {
+                        ThrowDiceNetwork(currentPlayerId, GetDiceResult());
+                    }
 
                     if (recentDiceThrowResult.Item1 != 0)
                     {
@@ -485,6 +487,120 @@ namespace PolypolyGameServer
             }
         }
 
+
+        public void DoubleRentCouponStatus(byte playerID, bool status)
+        {
+            Players[playerID].hasDoubleRentCoupon = status;
+
+            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerDoubleRent(playerID, status));
+        }
+
+        public void UpdateJailCouponStatus(byte playerID, bool status)
+        {
+            Players[playerID].hasJailCoupon = status;
+
+            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerJailCoupon(playerID, status));
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="loss"></param>
+        /// <returns>The amount subtracted</returns>
+        public int SubtractPlayerMoney(byte playerID, int loss, bool triggerAuction)
+        {
+            SetPlayerMoney(playerID, Players[playerID].Money - loss);
+
+            if (Players[playerID].Money < 0 && triggerAuction)
+            {
+                int mostExpensive = ServerBoard.PropertyTiles.Max(p =>
+                {
+                    if (p is null)
+                    {
+                        return 0;
+                    }
+
+                    if (p.Owner != playerID)
+                    {
+                        return 0;
+                    }
+
+                    return p.Value;
+                });
+
+                int auctionAmount = Math.Abs(Players[playerID].Money);
+
+                if (auctionAmount > mostExpensive)
+                {
+                    Players[playerID].isBankrupt = true;
+                    Print($"{playerID} is now bankrupt");
+                    SetPlayerMoney(playerID, 0);
+                    queuedPackets.Enqueue(Packet.Construct.PlayerBankrupt(playerID));
+
+                    // TODO: Maybe clear list too?
+                    return loss + Players[playerID].Money;
+                }
+                else
+                {
+                    TriggerAuction(auctionAmount);
+                }
+            }
+
+            return loss;
+        }
+
+        /// <summary>
+        ///     Updates player values <c>Position</c>.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="newPosition"></param>
+        /// <param name="moveType"></param>
+        public void UpdatePlayerPosition(byte playerID, byte newPosition, Packet.MoveType moveType)
+        {
+            newPosition = (byte)(newPosition % ServerBoard.Size);
+
+            Players[playerID].Position = newPosition;
+
+            var packet = Packet.Construct.UpdatePlayerPosition(playerID, newPosition, moveType);
+            queuedPackets.Enqueue(packet);
+        }
+
+        public void AddPlayerMoney(byte playerID, int income)
+        {
+            SetPlayerMoney(playerID, Players[playerID].Money + income);
+        }
+
+        /// <summary>
+        ///     Updates a gameServer.Players jailtime and notifies all clients.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="jailturns"></param>
+        public void UpdatePlayerJailturns(byte playerID, byte jailturns)
+        {
+            Players[playerID].JailTurns = jailturns;
+
+            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, jailturns));
+        }
+
+        /// <summary>
+        /// Updates player value <c>Money</c>.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="newAmount"></param>
+        public void SetPlayerMoney(byte playerID, int newAmount)
+        {
+            Players[playerID].Money = newAmount;
+
+            Print($"[{playerID}] new balance: {newAmount}");
+
+            var previousAmount = Players[playerID].Money;
+            var isIncreased = newAmount > previousAmount;
+
+            var packet = Packet.Construct.PlayerUpdateMoney(playerID, newAmount, isIncreased);
+
+            queuedPackets.Enqueue(packet);
+        }
+
         /// <summary>
         /// returns true if group monopoly is activated for a particular group.
         /// </summary>
@@ -544,9 +660,15 @@ namespace PolypolyGameServer
         }
 
         /// <summary>
+        /// Throws dice for current player.
+        /// </summary>
+        /// <param name="dieResult"></param>
+        public void ThrowDiceNetwork((byte, byte) dieResult) => ThrowDiceNetwork(currentPlayerId, dieResult);
+
+        /// <summary>
         /// </summary>
         /// <param name="playerID"></param>
-        public void ThrowDiceNetwork(byte playerID)
+        public void ThrowDiceNetwork(byte playerID, (byte, byte) dieResult)
         {
             if (playerID != currentPlayerId)
             {
@@ -554,12 +676,12 @@ namespace PolypolyGameServer
                 return;
             }
 
-            recentDiceThrowResult = GetDiceResult();
+            recentDiceThrowResult = dieResult;
 
             lobby.BroadcastPacket(Packet.Construct.DicerollResult(playerID, recentDiceThrowResult.Item1, recentDiceThrowResult.Item2));
         }
 
-        private void SyncronizeEffects()
+        public void SyncronizeEffects()
         {
             Print("Syncronizing");
 
@@ -570,31 +692,10 @@ namespace PolypolyGameServer
         }
 
         /// <summary>
-        ///     Updates player values <c>Position</c>.
-        /// </summary>
-        /// <param name="playerID"></param>
-        /// <param name="newPosition"></param>
-        /// <param name="moveType"></param>
-        private void UpdatePlayerPosition(byte playerID, byte newPosition, Packet.MoveType moveType)
-        {
-            newPosition = (byte) (newPosition % ServerBoard.Size);
-
-            Players[playerID].Position = newPosition;
-
-            var packet = Packet.Construct.UpdatePlayerPosition(playerID, newPosition, moveType);
-            queuedPackets.Enqueue(packet);
-        }
-
-        private void ChanceCardDrawn(Packet.ChanceCard card)
-        {
-            queuedPackets.Enqueue(Packet.Construct.DrawChanceCard(card));
-        }
-
-        /// <summary>
         ///     Updates player values <c>Position</c> and <c>JailTurns</c>.
         /// </summary>
         /// <param name="playerID"></param>
-        private void SendToJail(byte playerID)
+        public void SendToJail(byte playerID)
         {
             // no jail for you sir!
             if (Players[playerID].hasJailCoupon)
@@ -620,6 +721,11 @@ namespace PolypolyGameServer
             //MakeJailOffer(playerID);
         }
 
+        private void ChanceCardDrawn(Packet.ChanceCard card)
+        {
+            queuedPackets.Enqueue(Packet.Construct.DrawChanceCard(card));
+        }
+
         private void MakeJailOffer(byte playerID)
         {
             queuedPackets.Enqueue(Packet.Construct.PrisonCardOffer(Players[playerID].hasJailCoupon));
@@ -630,42 +736,11 @@ namespace PolypolyGameServer
             queuedPackets.Enqueue(Packet.Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent,
                 property.BaseCost, canAfford));
         }
-        
-        /// <summary>
-        /// Updates player value <c>Money</c>.
-        /// </summary>
-        /// <param name="playerID"></param>
-        /// <param name="newAmount"></param>
-        private void SetPlayerMoney(byte playerID, int newAmount)
-        {
-            Players[playerID].Money = newAmount;
-
-            Print($"[{playerID}] new balance: {newAmount}");
-
-            var previousAmount = Players[playerID].Money;
-            var isIncreased = newAmount > previousAmount;
-
-            var packet = Packet.Construct.PlayerUpdateMoney(playerID, newAmount, isIncreased);
-
-            queuedPackets.Enqueue(packet);
-        }
 
         private void UpdateGroupMonopoly(byte groupID, bool status)
         {
             Print("GroupID: " + groupID + " : " + status);
             queuedPackets.Enqueue(Packet.Construct.UpdateGroupDoubleRent(groupID, status));
-        }
-
-        /// <summary>
-        ///     Updates a gameServer.Players jailtime and notifies all clients.
-        /// </summary>
-        /// <param name="playerID"></param>
-        /// <param name="jailturns"></param>
-        private void UpdatePlayerJailturns(byte playerID, byte jailturns)
-        {
-            Players[playerID].JailTurns = jailturns;
-            
-            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, jailturns));
         }
 
         private void UpdateBoardProperty(byte tileID, TileProperty tile)
@@ -693,11 +768,6 @@ namespace PolypolyGameServer
             lobby.BroadcastPacket(packet);
         }
 
-        private void AddPlayerMoney(byte playerID, int income)
-        {
-            SetPlayerMoney(playerID, Players[playerID].Money + income);
-        }
-
         private void TriggerAuction(int amountToAuction)
         {
             auctionAmount = amountToAuction;
@@ -709,68 +779,7 @@ namespace PolypolyGameServer
             SyncronizeEffects();
         }
 
-        private void DoubleRentCouponStatus(byte playerID, bool status)
-        {
-            Players[playerID].hasDoubleRentCoupon = status;
-
-            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerDoubleRent(playerID, status));
-        }
-
-        private void UpdateJailCouponStatus(byte playerID, bool status)
-        {
-            Players[playerID].hasJailCoupon = status;
-
-            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerJailCoupon(playerID, status));
-        }
-
-        /// <summary>
-        /// </summary>
-        /// <param name="playerID"></param>
-        /// <param name="loss"></param>
-        /// <returns>The amount subtracted</returns>
-        private int SubtractPlayerMoney(byte playerID, int loss, bool triggerAuction)
-        {
-            SetPlayerMoney(playerID, Players[playerID].Money - loss);
-
-            if (Players[playerID].Money < 0 && triggerAuction)
-            {
-                int mostExpensive = ServerBoard.PropertyTiles.Max(p =>
-                {
-                    if (p is null)
-                    {
-                        return 0;
-                    }
-
-                    if (p.Owner != playerID)
-                    {
-                        return 0;
-                    }
-
-                    return p.Value;
-                });
-
-                int auctionAmount = Math.Abs(Players[playerID].Money);
-
-                if (auctionAmount > mostExpensive)
-                {
-                    Players[playerID].isBankrupt = true;
-                    Print($"{playerID} is now bankrupt");
-                    SetPlayerMoney(playerID, 0);
-                    queuedPackets.Enqueue(Packet.Construct.PlayerBankrupt(playerID));
-
-                    // TODO: Maybe clear list too?
-                    return loss + Players[playerID].Money;
-                }
-                else
-                {
-                    TriggerAuction(auctionAmount);
-                }
-            }
-
-            return loss;
-        }
-
-        private (byte, byte) GetDiceResult()
+        public (byte, byte) GetDiceResult()
         {
             // Maybe turn this into a function returning 2 bytes instead to make animations on client-side.
 

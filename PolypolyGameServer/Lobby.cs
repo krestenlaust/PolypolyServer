@@ -12,11 +12,11 @@ namespace PolypolyGameServer
     {
         //public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
         public readonly Dictionary<byte, Client> Clients = new Dictionary<byte, Client>();
+        public readonly GameConfig Config;
         internal SimpleLogger log;
+        private GameLogic gameLogic;
         private byte? hostID = null;
         private TcpListener tcpListener;
-        private GameLogic gameLogic;
-        private GameConfig config;
         private bool isGameInProgress
         {
             get
@@ -24,6 +24,8 @@ namespace PolypolyGameServer
                 return !(gameLogic is null);
             }
         }
+
+        public event Action<GameLogic> onGameStarted;
 
         /// <summary>
         /// Reserves port, opens a game server.
@@ -34,7 +36,7 @@ namespace PolypolyGameServer
         {
             log = new SimpleLogger();
             tcpListener = new TcpListener(address, port);
-            config = GameConfig.StandardConfig;
+            Config = GameConfig.StandardConfig;
         }
 
         /// <summary>
@@ -47,12 +49,12 @@ namespace PolypolyGameServer
         {
             log = logger;
             tcpListener = new TcpListener(address, port);
-            config = GameConfig.StandardConfig;
+            Config = GameConfig.StandardConfig;
         }
 
         private void Print(string msg)
         {
-            log.Print("[Network] " + msg);
+            log?.Print("[Network] " + msg);
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace PolypolyGameServer
         /// <param name="cancellationToken"></param>
         public void Start()
         {
-            Console.WriteLine("Version 1.2.0");
+            Print("Version 1.2.0");
 
             StartAcceptingPlayers();
             tcpListener.BeginAcceptTcpClient(PlayerConnected, null);
@@ -144,7 +146,7 @@ namespace PolypolyGameServer
                 MigrateHost(playerID);
             }
 
-            if (Clients.Count < config.MaxPlayers)
+            if (Clients.Count < Config.MaxPlayers)
                 ListenForPlayer();
 
             Print($"[{netClient.Client.RemoteEndPoint}] Has connected and been assigned ID: {playerID}");
@@ -173,7 +175,7 @@ namespace PolypolyGameServer
             switch (packetType)
             {
                 case ClientPacketType.DicerollRequest:
-                    gameLogic.ThrowDiceNetwork(clientID);
+                    gameLogic.ThrowDiceNetwork(clientID, gameLogic.GetDiceResult());
                     break;
                 case ClientPacketType.PlayerNickname:
                     Deconstruct.PlayerNickname(stream, out var nickname);
@@ -209,7 +211,8 @@ namespace PolypolyGameServer
                     
                     if (playersAreReady)
                     {
-                        gameLogic = new GameLogic(this, Clients.Keys.ToList(), config);
+                        gameLogic = new GameLogic(this, Clients.Keys.ToList(), Config);
+                        onGameStarted?.Invoke(gameLogic);
                     }
 
                     broadcastPacket = Construct.GameStarted();

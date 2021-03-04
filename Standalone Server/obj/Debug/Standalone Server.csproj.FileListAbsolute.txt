@@ -18,13 +18,3 @@ C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\Standalone Server
 C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\Standalone Server\obj\Debug\Standalone Server.csproj.CopyComplete
 C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\Standalone Server\obj\Debug\Standalone Server.exe
 C:\Users\kress\Documents\Unity Projects\Monopoly\Assets\Server\Standalone Server\obj\Debug\Standalone Server.pdb
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\Standalone Server.exe.config
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\Standalone Server.exe
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\Standalone Server.pdb
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\PolypolyGameServer.dll
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\PolypolyGameServer.pdb
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csprojAssemblyReference.cache
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csproj.CoreCompileInputs.cache
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csproj.CopyComplete
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.exe
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.pdb

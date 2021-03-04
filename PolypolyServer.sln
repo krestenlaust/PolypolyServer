@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Standalone Server", "Standa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolypolyGameServer", "PolypolyGameServer\PolypolyGameServer.csproj", "{ED548F66-2D9D-4338-B692-B3C54AACCB4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Developer Server", "Developer Server\Developer Server.csproj", "{6F4D342D-5031-4971-926E-1AD3CC186A58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{ED548F66-2D9D-4338-B692-B3C54AACCB4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED548F66-2D9D-4338-B692-B3C54AACCB4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED548F66-2D9D-4338-B692-B3C54AACCB4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
