@@ -63,9 +63,9 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PolypolyGameServer\PolypolyGameServer.csproj">
+    <ProjectReference Include="..\PolypolyGameServer\PolypolyGame.csproj">
       <Project>{ed548f66-2d9d-4338-b692-b3c54aaccb4b}</Project>
-      <Name>PolypolyGameServer</Name>
+      <Name>PolypolyGame</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

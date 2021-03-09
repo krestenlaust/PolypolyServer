@@ -1,8 +1,9 @@
-﻿using System;
+﻿using PolypolyGameServer;
+using System;
 using System.Net.Sockets;
 using System.Text;
 
-namespace PolypolyGameServer
+namespace NetworkProtocol
 {
     public static class Packet
     {
@@ -170,10 +171,10 @@ namespace PolypolyGameServer
             /// <param name="cost"></param>
             /// <param name="isAffordable"></param>
             /// <returns></returns>
-            public static byte[] PropertyOffer(byte playerID, ServerBoard.TileProperty.BuildingState buildingState, int baseRent,
+            public static byte[] PropertyOffer(byte playerID, GameBoard.TileProperty.BuildingState buildingState, int baseRent,
                 int cost, bool isAffordable)
             {
-                var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(ServerBoard.TileProperty.BuildingState) +
+                var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(GameBoard.TileProperty.BuildingState) +
                                       sizeof(int) + sizeof(int) + sizeof(bool)];
 
                 packet[0] = (byte) ServerPacketType.PropertyOffer;
@@ -380,13 +381,13 @@ namespace PolypolyGameServer
             /// <param name="tileID"></param>
             /// <param name="tile"></param>
             /// <returns></returns>
-            public static byte[] UpdateBoardProperty(byte tileID, ServerBoard.TileProperty tile)
+            public static byte[] UpdateBoardProperty(byte tileID, GameBoard.TileProperty tile)
             {
                 var packet = new byte[
                     sizeof(ServerPacketType) + 
                     sizeof(byte) + 
                     sizeof(byte) + 
-                    sizeof(ServerBoard.TileProperty.BuildingState) + 
+                    sizeof(GameBoard.TileProperty.BuildingState) + 
                     sizeof(byte) +
                     sizeof(int)];
 
@@ -723,11 +724,11 @@ namespace PolypolyGameServer
                 playerID = (byte)stream.ReadByte();
             }
 
-            public static void PropertyOffer(NetworkStream stream, out byte playerID, out ServerBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost,
+            public static void PropertyOffer(NetworkStream stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost,
                 out bool isAffordable)
             {
                 playerID = (byte) stream.ReadByte();
-                buildingState = (ServerBoard.TileProperty.BuildingState) stream.ReadByte();
+                buildingState = (GameBoard.TileProperty.BuildingState) stream.ReadByte();
 
                 var baseRentBytes = new byte[sizeof(int)];
                 stream.Read(baseRentBytes, 0, baseRentBytes.Length);
@@ -882,11 +883,11 @@ namespace PolypolyGameServer
             /// <param name="tileID"></param>
             /// <param name="tile"></param>
             public static void UpdateBoardProperty(NetworkStream stream, out byte tileID,
-                out ServerBoard.TileProperty tile)
+                out GameBoard.TileProperty tile)
             {
                 tileID = (byte)stream.ReadByte();
                 byte owner = (byte)stream.ReadByte();
-                var buildingState = (ServerBoard.TileProperty.BuildingState) stream.ReadByte();
+                var buildingState = (GameBoard.TileProperty.BuildingState) stream.ReadByte();
 
                 byte groupID = (byte)stream.ReadByte();
                 var baseRentBytes = new byte[sizeof(int)];
@@ -894,7 +895,7 @@ namespace PolypolyGameServer
 
                 var baseRent = BitConverter.ToInt32(baseRentBytes, 0);
 
-                tile = new ServerBoard.TileProperty(baseRent, owner, buildingState, groupID);
+                tile = new GameBoard.TileProperty(baseRent, owner, buildingState, groupID);
             }
 
             public static void DrawChanceCard(NetworkStream stream, out ChanceCard chanceCard)

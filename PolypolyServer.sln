@@ -5,11 +5,19 @@ VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Standalone Server", "Standalone Server\Standalone Server.csproj", "{746A07BA-7A5A-4F6C-9388-D9CBE051729E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolypolyGameServer", "PolypolyGameServer\PolypolyGameServer.csproj", "{ED548F66-2D9D-4338-B692-B3C54AACCB4B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolypolyGame", "PolypolyGameServer\PolypolyGame.csproj", "{ED548F66-2D9D-4338-B692-B3C54AACCB4B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Developer Server", "Developer Server\Developer Server.csproj", "{6F4D342D-5031-4971-926E-1AD3CC186A58}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{A794959A-7242-4CC0-9C97-097EC64003CF}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetworkProtocol", "NetworkProtocol\NetworkProtocol.shproj", "{4DEA6930-8A6B-4798-AE57-634BFE6424E6}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		NetworkProtocol\NetworkProtocol.projitems*{4dea6930-8a6b-4798-ae57-634bfe6424e6}*SharedItemsImports = 13
+		NetworkProtocol\NetworkProtocol.projitems*{ed548f66-2d9d-4338-b692-b3c54aaccb4b}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -27,6 +35,10 @@ Global
 		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F4D342D-5031-4971-926E-1AD3CC186A58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A794959A-7242-4CC0-9C97-097EC64003CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A794959A-7242-4CC0-9C97-097EC64003CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A794959A-7242-4CC0-9C97-097EC64003CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A794959A-7242-4CC0-9C97-097EC64003CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

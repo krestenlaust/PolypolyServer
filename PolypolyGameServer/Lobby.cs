@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using static PolypolyGameServer.Packet;
+using static NetworkProtocol.Packet;
 
 namespace PolypolyGameServer
 {

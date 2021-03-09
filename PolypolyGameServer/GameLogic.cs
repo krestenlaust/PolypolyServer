@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using static PolypolyGameServer.ServerBoard;
+using NetworkProtocol;
+using static NetworkProtocol.Packet;
+using static NetworkProtocol.GameBoard;
 
 namespace PolypolyGameServer
 {
@@ -25,7 +26,7 @@ namespace PolypolyGameServer
             NextTurn
         }
         
-        public readonly ServerBoard ServerBoard;
+        public readonly GameBoard ServerBoard;
         public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
 
         private readonly GameConfig gameConfig;
@@ -150,7 +151,7 @@ namespace PolypolyGameServer
                                         // monopoly!
                                         if (CheckGroupMonopoly(otherGroupID, consideredProperty.Owner))
                                         {
-                                            GameFinished(Packet.GameOverType.Monopoly, consideredProperty.Owner);
+                                            GameFinished(GameOverType.Monopoly, consideredProperty.Owner);
                                         }
                                     }
                                 }
@@ -310,7 +311,7 @@ namespace PolypolyGameServer
                     }
 
                     int newPosition = (Players[currentPlayerId].Position + diceResult) % ServerBoard.Size;
-                    UpdatePlayerPosition(currentPlayerId, (byte)newPosition, Packet.MoveType.Walk);
+                    UpdatePlayerPosition(currentPlayerId, (byte)newPosition, MoveType.Walk);
                     SyncronizeEffects();
 
                     // Handle player land location
@@ -335,7 +336,7 @@ namespace PolypolyGameServer
                         Print($"Turn {turnCount}, Player: {currentPlayerId}");
 
                     // notify clients of turn start
-                    queuedPackets.Enqueue(Packet.Construct.UpdatePlayerTurn(currentPlayerId));
+                    queuedPackets.Enqueue(Construct.UpdatePlayerTurn(currentPlayerId));
                     SyncronizeEffects();
 
 
@@ -431,32 +432,32 @@ namespace PolypolyGameServer
                     }
                     break;
                 case TileType.ChanceCard:
-                    var chanceCards = Enum.GetValues(typeof(Packet.ChanceCard));
-                    var card = (Packet.ChanceCard) chanceCards.GetValue(random.Next(chanceCards.Length));
+                    var chanceCards = Enum.GetValues(typeof(ChanceCard));
+                    var card = (ChanceCard) chanceCards.GetValue(random.Next(chanceCards.Length));
 
                     ChanceCardDrawn(card);
 
-                    Print($"Chance card: {Enum.GetName(typeof(Packet.ChanceCard), card)}");
+                    Print($"Chance card: {Enum.GetName(typeof(ChanceCard), card)}");
 
                     switch (card)
                     {
-                        case Packet.ChanceCard.GotoPrison:
+                        case ChanceCard.GotoPrison:
                             SendToJail(currentPlayerId);
 
                             break;
-                        case Packet.ChanceCard.MoneyAdd:
+                        case ChanceCard.MoneyAdd:
                             AddPlayerMoney(currentPlayerId, gameConfig.ChanceCardMoneyReward);
 
                             break;
-                        case Packet.ChanceCard.MoneyDeduct:
+                        case ChanceCard.MoneyDeduct:
                             SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardMoneyPenalty, true);
 
                             break;
-                        case Packet.ChanceCard.DoubleRentCoupon:
+                        case ChanceCard.DoubleRentCoupon:
                             DoubleRentCouponStatus(currentPlayerId, true);
 
                             break;
-                        case Packet.ChanceCard.PrisonCoupon:
+                        case ChanceCard.PrisonCoupon:
                             if (Players[currentPlayerId].hasJailCoupon)
                             {
                                 // give reward instead of extra coupon.
@@ -468,21 +469,21 @@ namespace PolypolyGameServer
                             }
 
                             break;
-                        case Packet.ChanceCard.TrainCoupon:
-                            UpdatePlayerPosition(currentPlayerId, ServerBoard.TraintileIndex, Packet.MoveType.Walk);
+                        case ChanceCard.TrainCoupon:
+                            UpdatePlayerPosition(currentPlayerId, ServerBoard.TraintileIndex, MoveType.Walk);
 
                             HandlePlayerLandOnTile();
                             break;
-                        case Packet.ChanceCard.MoveFourTilesBack:
-                            UpdatePlayerPosition(currentPlayerId, (byte) (position - 4), Packet.MoveType.Walk);
+                        case ChanceCard.MoveFourTilesBack:
+                            UpdatePlayerPosition(currentPlayerId, (byte) (position - 4), MoveType.Walk);
 
                             HandlePlayerLandOnTile();
                             break;
-                        case Packet.ChanceCard.Go:
-                            UpdatePlayerPosition(currentPlayerId, 0, Packet.MoveType.Walk);
+                        case ChanceCard.Go:
+                            UpdatePlayerPosition(currentPlayerId, 0, MoveType.Walk);
                             AddPlayerMoney(currentPlayerId, gameConfig.PassGoReward);
                             break;
-                        case Packet.ChanceCard.ForceAuction:
+                        case ChanceCard.ForceAuction:
                             if (ServerBoard.PropertyTiles.Any(p => p?.Owner == currentPlayerId))
                             {
                                 TriggerAuction(0);
@@ -498,14 +499,14 @@ namespace PolypolyGameServer
         {
             Players[playerID].hasDoubleRentCoupon = status;
 
-            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerDoubleRent(playerID, status));
+            queuedPackets.Enqueue(Construct.UpdatePlayerDoubleRent(playerID, status));
         }
 
         public void UpdateJailCouponStatus(byte playerID, bool status)
         {
             Players[playerID].hasJailCoupon = status;
 
-            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerJailCoupon(playerID, status));
+            queuedPackets.Enqueue(Construct.UpdatePlayerJailCoupon(playerID, status));
         }
 
         /// <summary>
@@ -541,7 +542,7 @@ namespace PolypolyGameServer
                     Players[playerID].isBankrupt = true;
                     Print($"{playerID} is now bankrupt");
                     SetPlayerMoney(playerID, 0);
-                    queuedPackets.Enqueue(Packet.Construct.PlayerBankrupt(playerID));
+                    queuedPackets.Enqueue(Construct.PlayerBankrupt(playerID));
 
                     // TODO: Maybe clear list too?
                     return loss + Players[playerID].Money;
@@ -561,13 +562,13 @@ namespace PolypolyGameServer
         /// <param name="playerID"></param>
         /// <param name="newPosition"></param>
         /// <param name="moveType"></param>
-        public void UpdatePlayerPosition(byte playerID, byte newPosition, Packet.MoveType moveType)
+        public void UpdatePlayerPosition(byte playerID, byte newPosition, MoveType moveType)
         {
             newPosition = (byte)(newPosition % ServerBoard.Size);
 
             Players[playerID].Position = newPosition;
 
-            var packet = Packet.Construct.UpdatePlayerPosition(playerID, newPosition, moveType);
+            var packet = Construct.UpdatePlayerPosition(playerID, newPosition, moveType);
             queuedPackets.Enqueue(packet);
         }
 
@@ -585,7 +586,7 @@ namespace PolypolyGameServer
         {
             Players[playerID].JailTurns = jailturns;
 
-            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, jailturns));
+            queuedPackets.Enqueue(Construct.PlayerJail(playerID, jailturns));
         }
 
         /// <summary>
@@ -602,7 +603,7 @@ namespace PolypolyGameServer
             var previousAmount = Players[playerID].Money;
             var isIncreased = newAmount > previousAmount;
 
-            var packet = Packet.Construct.PlayerUpdateMoney(playerID, newAmount, isIncreased);
+            var packet = Construct.PlayerUpdateMoney(playerID, newAmount, isIncreased);
 
             queuedPackets.Enqueue(packet);
         }
@@ -610,10 +611,10 @@ namespace PolypolyGameServer
         /// <summary>
         /// returns true if group monopoly is activated for a particular group.
         /// </summary>
-        private void GameFinished(Packet.GameOverType gameOverType, byte winner)
+        private void GameFinished(GameOverType gameOverType, byte winner)
         {
-            Print("Game over! " + Enum.GetName(typeof(Packet.GameOverType), gameOverType) + ", winner: " + winner);
-            queuedPackets.Enqueue(Packet.Construct.GameOver(gameOverType, winner));
+            Print("Game over! " + Enum.GetName(typeof(GameOverType), gameOverType) + ", winner: " + winner);
+            queuedPackets.Enqueue(Construct.GameOver(gameOverType, winner));
             
             SyncronizeEffects();
             lobby.EndGame();
@@ -684,7 +685,7 @@ namespace PolypolyGameServer
 
             recentDiceThrowResult = dieResult;
 
-            lobby.BroadcastPacket(Packet.Construct.DicerollResult(playerID, recentDiceThrowResult.Item1, recentDiceThrowResult.Item2));
+            lobby.BroadcastPacket(Construct.DicerollResult(playerID, recentDiceThrowResult.Item1, recentDiceThrowResult.Item2));
         }
 
         public void SyncronizeEffects()
@@ -713,8 +714,8 @@ namespace PolypolyGameServer
             Players[playerID].Position = ServerBoard.JailtileIndex;
             Players[playerID].JailTurns = gameConfig.SentenceDuration;
 
-            queuedPackets.Enqueue(Packet.Construct.PlayerJail(playerID, gameConfig.SentenceDuration));
-            queuedPackets.Enqueue(Packet.Construct.UpdatePlayerPosition(playerID, ServerBoard.JailtileIndex, Packet.MoveType.DirectMove));
+            queuedPackets.Enqueue(Construct.PlayerJail(playerID, gameConfig.SentenceDuration));
+            queuedPackets.Enqueue(Construct.UpdatePlayerPosition(playerID, ServerBoard.JailtileIndex, MoveType.DirectMove));
 
             if (gameStates?.First?.Value != GameState.WaitingForAnimation)
             {
@@ -727,38 +728,38 @@ namespace PolypolyGameServer
             //MakeJailOffer(playerID);
         }
 
-        private void ChanceCardDrawn(Packet.ChanceCard card)
+        private void ChanceCardDrawn(ChanceCard card)
         {
-            queuedPackets.Enqueue(Packet.Construct.DrawChanceCard(card));
+            queuedPackets.Enqueue(Construct.DrawChanceCard(card));
         }
 
         private void MakeJailOffer(byte playerID)
         {
-            queuedPackets.Enqueue(Packet.Construct.PrisonCardOffer(Players[playerID].hasJailCoupon));
+            queuedPackets.Enqueue(Construct.PrisonCardOffer(Players[playerID].hasJailCoupon));
         }
 
         private void MakePropertyOffer(byte playerID, TileProperty property, bool canAfford, int cost)
         {
-            queuedPackets.Enqueue(Packet.Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent,
+            queuedPackets.Enqueue(Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent,
                 cost, canAfford));
         }
 
         private void UpdateGroupMonopoly(byte groupID, bool status)
         {
             Print("GroupID: " + groupID + " : " + status);
-            queuedPackets.Enqueue(Packet.Construct.UpdateGroupDoubleRent(groupID, status));
+            queuedPackets.Enqueue(Construct.UpdateGroupDoubleRent(groupID, status));
         }
 
         private void UpdateBoardProperty(byte tileID, TileProperty tile)
         {
-            queuedPackets.Enqueue(Packet.Construct.UpdateBoardProperty(tileID, tile));
+            queuedPackets.Enqueue(Construct.UpdateBoardProperty(tileID, tile));
         }
 
         private void SyncronizeBoard()
         {
             var propertyCount = ServerBoard.PropertyTiles.Count(Tile => !(Tile is null));
 
-            var packet = new byte[Packet.Construct.SIZE_UpdateBoardProperty * propertyCount];
+            var packet = new byte[Construct.SIZE_UpdateBoardProperty * propertyCount];
 
             var packetPtr = 0;
             for (var i = 0; i < ServerBoard.PropertyTiles.Length; i++)
@@ -766,9 +767,9 @@ namespace PolypolyGameServer
                 if (ServerBoard.PropertyTiles[i] == null)
                     continue;
 
-                var partialPacket = Packet.Construct.UpdateBoardProperty((byte) i, ServerBoard.PropertyTiles[i]);
+                var partialPacket = Construct.UpdateBoardProperty((byte) i, ServerBoard.PropertyTiles[i]);
                 partialPacket.CopyTo(packet, packetPtr);
-                packetPtr += Packet.Construct.SIZE_UpdateBoardProperty;
+                packetPtr += Construct.SIZE_UpdateBoardProperty;
             }
 
             lobby.BroadcastPacket(packet);
@@ -781,7 +782,7 @@ namespace PolypolyGameServer
             gameStates.AddFirst(GameState.WaitingForPlayerChoice);
             waitingForChoice = PlayerChoice.Auction;
 
-            queuedPackets.Enqueue(Packet.Construct.AuctionProperty(currentPlayerId, amountToAuction));
+            queuedPackets.Enqueue(Construct.AuctionProperty(currentPlayerId, amountToAuction));
             SyncronizeEffects();
         }
 

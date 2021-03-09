@@ -1,8 +1,9 @@
-﻿using System;
+﻿using PolypolyGameServer;
+using System;
 
-namespace PolypolyGameServer
+namespace NetworkProtocol
 {
-    public class ServerBoard
+    public class GameBoard
     {
         public enum TileType
         {
@@ -25,10 +26,10 @@ namespace PolypolyGameServer
 
         public byte Size => (byte) TileTypes.Length;
 
-        public static ServerBoard GenerateStandardBoard()
+        public static GameBoard GenerateStandardBoard()
         {
             // Initialize standard board
-            ServerBoard standardBoard = new ServerBoard();
+            GameBoard standardBoard = new GameBoard();
             standardBoard.JailtileIndex = 8;
             standardBoard.TraintileIndex = 16;
 

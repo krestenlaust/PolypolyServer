@@ -1,6 +1,4 @@
-﻿using System.Net.Sockets;
-
-namespace PolypolyGameServer
+﻿namespace PolypolyGameServer
 {
     public class Player
     {
@@ -24,9 +22,5 @@ namespace PolypolyGameServer
         /// Describes the index of property to auction, if null then no reply.
         /// </summary>
         public byte? ReplyAuctionIndex = null;
-
-        public Player()
-        {
-        }
     }
 }
