@@ -1,4 +1,4 @@
-﻿namespace PolypolyGameServer
+﻿namespace PolypolyGame
 {
     public struct GameConfig
     {
@@ -34,12 +34,12 @@
             new GameConfig
             {
                 MaxPlayers = 4,
-                StartMoney = 25000,
+                StartMoney = 20000,
                 SentenceDuration = 3,
-                PassGoReward = 5000,
+                PassGoReward = 3000,//5000,
                 CollectRentInPrison = true,
                 TaxAmount = 3000,
-                TressureTileReward = 8000,
+                TressureTileReward = 6000,
                 ChanceCardMoneyReward = 5000,
                 ChanceCardMoneyPenalty = 1500,
                 ChanceCardPrisonCouponWorth = 4000,

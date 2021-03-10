@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PolypolyGameServer
+namespace PolypolyGame
 {
     public class SimpleLogger
     {

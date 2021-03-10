@@ -1,4 +1,4 @@
-﻿using PolypolyGameServer;
+﻿using PolypolyGame;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -86,208 +86,208 @@ namespace Client
                 return;
             }
 
-            if (stream.DataAvailable != true)
-                return;
-
-            ServerPacketType packetHeader = (ServerPacketType)stream.ReadByte();
-
-            switch (packetHeader)
+            while (stream.DataAvailable)
             {
-                case ServerPacketType.DicerollResult:
-                    {
-                        Deconstruct.DicerollResult(stream, out byte playerID, out (byte, byte) rollResult);
+                ServerPacketType packetHeader = (ServerPacketType)stream.ReadByte();
 
-                        TriggerDiceRolled(playerID, rollResult);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerTurn:
-                    {
-                        Deconstruct.UpdatePlayerTurn(stream, out byte playerID);
-                        CurrentTurn = playerID;
-
-                        TriggerUpdatePlayerTurn(playerID);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerNickname:
-                    {
-                        Deconstruct.UpdateNickname(stream, out string nickname, out byte playerID);
-                        if (Players.ContainsKey(playerID))
+                switch (packetHeader)
+                {
+                    case ServerPacketType.DicerollResult:
                         {
-                            Players[playerID].Nickname = nickname;
+                            Deconstruct.DicerollResult(stream, out byte playerID, out (byte, byte) rollResult);
+
+                            TriggerDiceRolled(playerID, rollResult);
                         }
-
-                        TriggerNewNickname(playerID, nickname);
-                    }
-                    break;
-                case ServerPacketType.AssignPlayerID:
-                    {
-                        SelfID = (byte)stream.ReadByte();
-                        Players[SelfID] = new ClientPlayer();
-
-                        TriggerAssignedID(SelfID);
-                    }
-                    break;
-                case ServerPacketType.UpdateHost:
-                    {
-                        Deconstruct.UpdateHost(stream, out byte playerID);
-
-                        foreach (KeyValuePair<byte, ClientPlayer> item in Players)
+                        break;
+                    case ServerPacketType.UpdatePlayerTurn:
                         {
-                            Players[item.Key].isHost = item.Key == playerID;
+                            Deconstruct.UpdatePlayerTurn(stream, out byte playerID);
+                            CurrentTurn = playerID;
+
+                            TriggerUpdatePlayerTurn(playerID);
                         }
-
-                        HostID = playerID;
-                        TriggerUpdateHost(playerID);
-                    }
-                    break;
-                case ServerPacketType.PlayerDisconnected:
-                    {
-                        Deconstruct.PlayerDisconnected(stream, out byte playerID, out bool permanent, out DisconnectReason disconnectReason);
-
-                        TriggerPlayerDisconnected(playerID, permanent, disconnectReason);
-
-                        if (playerID != SelfID && permanent)
+                        break;
+                    case ServerPacketType.UpdatePlayerNickname:
                         {
-                            Players.Remove(playerID);
+                            Deconstruct.UpdateNickname(stream, out string nickname, out byte playerID);
+                            if (Players.ContainsKey(playerID))
+                            {
+                                Players[playerID].Nickname = nickname;
+                            }
+
+                            TriggerNewNickname(playerID, nickname);
                         }
-                    }
-                    break;
-                case ServerPacketType.PlayerConnected:
-                    {
-                        Deconstruct.PlayerConnected(stream, out byte playerID);
-                        Players[playerID] = new ClientPlayer();
+                        break;
+                    case ServerPacketType.AssignPlayerID:
+                        {
+                            SelfID = (byte)stream.ReadByte();
+                            Players[SelfID] = new ClientPlayer();
 
-                        TriggerPlayerConnected(playerID);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerReady:
-                    {
-                        Deconstruct.UpdatePlayerReady(stream, out byte playerID, out bool readyStatus);
-                        Players[playerID].isReady = readyStatus;
+                            TriggerAssignedID(SelfID);
+                        }
+                        break;
+                    case ServerPacketType.UpdateHost:
+                        {
+                            Deconstruct.UpdateHost(stream, out byte playerID);
 
-                        TriggerUpdatePlayerReady(playerID, readyStatus);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerMoney:
-                    {
-                        Deconstruct.UpdatePlayerMoney(stream, out byte playerID, out int newAmount, out bool isIncreased);
-                        int oldAmount = Players[playerID].Money;
-                        Players[playerID].Money = newAmount;
+                            foreach (KeyValuePair<byte, ClientPlayer> item in Players)
+                            {
+                                Players[item.Key].isHost = item.Key == playerID;
+                            }
 
-                        TriggerUpdatePlayerMoney(playerID, newAmount, oldAmount);
-                    }
-                    break;
-                case ServerPacketType.PlayerJail:
-                    {
-                        Deconstruct.PlayerJail(stream, out byte playerID, out byte jailTurnsLeft);
-                        Players[playerID].JailTurns = jailTurnsLeft;
+                            HostID = playerID;
+                            TriggerUpdateHost(playerID);
+                        }
+                        break;
+                    case ServerPacketType.PlayerDisconnected:
+                        {
+                            Deconstruct.PlayerDisconnected(stream, out byte playerID, out bool permanent, out DisconnectReason disconnectReason);
 
-                        TriggerPlayerJailed(playerID, jailTurnsLeft);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerPosition:
-                    {
-                        Deconstruct.UpdatePlayerPosition(stream, out byte playerID, out byte newPosition, out MoveType moveType);
+                            TriggerPlayerDisconnected(playerID, permanent, disconnectReason);
 
-                        TriggerUpdatePlayerPosition(playerID, (byte)Players[playerID].Position, newPosition, moveType);
+                            if (playerID != SelfID && permanent)
+                            {
+                                Players.Remove(playerID);
+                            }
+                        }
+                        break;
+                    case ServerPacketType.PlayerConnected:
+                        {
+                            Deconstruct.PlayerConnected(stream, out byte playerID);
+                            Players[playerID] = new ClientPlayer();
 
-                        Players[playerID].Position = newPosition;
-                    }
-                    break;
-                case ServerPacketType.GameStarted:
-                    {
-                        TriggerGameStarted();
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerColor:
-                    {
-                        Deconstruct.UpdatePlayerColor(stream, out byte playerID, out TeamColor color);
+                            TriggerPlayerConnected(playerID);
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerReady:
+                        {
+                            Deconstruct.UpdatePlayerReady(stream, out byte playerID, out bool readyStatus);
+                            Players[playerID].isReady = readyStatus;
 
-                        Players[playerID].Color = color;
+                            TriggerUpdatePlayerReady(playerID, readyStatus);
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerMoney:
+                        {
+                            Deconstruct.UpdatePlayerMoney(stream, out byte playerID, out int newAmount, out bool isIncreased);
+                            int oldAmount = Players[playerID].Money;
+                            Players[playerID].Money = newAmount;
 
-                        TriggerUpdatePlayerColor(playerID, color);
-                    }
-                    break;
-                case ServerPacketType.UpdateBoardProperty:
-                    {
-                        Deconstruct.UpdateBoardProperty(stream, out byte tileIndex, out GameBoard.TileProperty tile);
+                            TriggerUpdatePlayerMoney(playerID, newAmount, oldAmount);
+                        }
+                        break;
+                    case ServerPacketType.PlayerJail:
+                        {
+                            Deconstruct.PlayerJail(stream, out byte playerID, out byte jailTurnsLeft);
+                            Players[playerID].JailTurns = jailTurnsLeft;
 
-                        Board.PropertyTiles[tileIndex] = tile;
+                            TriggerPlayerJailed(playerID, jailTurnsLeft);
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerPosition:
+                        {
+                            Deconstruct.UpdatePlayerPosition(stream, out byte playerID, out byte newPosition, out MoveType moveType);
 
-                        TriggerUpdateBoardProperty(tileIndex, tile);
-                    }
-                    break;
-                case ServerPacketType.DrawChanceCard:
-                    {
-                        Deconstruct.DrawChanceCard(stream, out ChanceCard chanceCard);
+                            TriggerUpdatePlayerPosition(playerID, (byte)Players[playerID].Position, newPosition, moveType);
 
-                        TriggerDrawChanceCard(chanceCard);
-                    }
-                    break;
-                case ServerPacketType.PrisonCardOffer:
-                    {
-                        Deconstruct.PrisonCardOffer(stream, out bool hasCard);
+                            Players[playerID].Position = newPosition;
+                        }
+                        break;
+                    case ServerPacketType.GameStarted:
+                        {
+                            TriggerGameStarted();
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerColor:
+                        {
+                            Deconstruct.UpdatePlayerColor(stream, out byte playerID, out TeamColor color);
 
-                        TriggerPrisonCardOffer(hasCard);
-                    }
-                    break;
-                case ServerPacketType.PropertyOffer:
-                    {
-                        Deconstruct.PropertyOffer(stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost, out bool isAffordable);
+                            Players[playerID].Color = color;
 
-                        TriggerPropertyOffer(playerID, buildingState, baseRent, cost, isAffordable);
-                    }
-                    break;
-                case ServerPacketType.AuctionProperty:
-                    {
-                        Deconstruct.AuctionProperty(stream, out byte playerID, out int auctionValue);
+                            TriggerUpdatePlayerColor(playerID, color);
+                        }
+                        break;
+                    case ServerPacketType.UpdateBoardProperty:
+                        {
+                            Deconstruct.UpdateBoardProperty(stream, out byte tileIndex, out GameBoard.TileProperty tile);
 
-                        TriggerPropertyAuction(playerID, auctionValue);
-                    }
-                    break;
-                case ServerPacketType.UpdateGroupDoubleRent:
-                    {
-                        Deconstruct.UpdateGroupDoubleRent(stream, out byte groupID, out bool status);
+                            Board.PropertyTiles[tileIndex] = tile;
 
-                        TriggerUpdateGroupDoubleRent(groupID, status);
-                    }
-                    break;
-                case ServerPacketType.PlayerBankrupt:
-                    {
-                        Deconstruct.PlayerBankrupt(stream, out byte playerID);
+                            TriggerUpdateBoardProperty(tileIndex, tile);
+                        }
+                        break;
+                    case ServerPacketType.DrawChanceCard:
+                        {
+                            Deconstruct.DrawChanceCard(stream, out ChanceCard chanceCard);
 
-                        Players[playerID].isBankrupt = true;
+                            TriggerDrawChanceCard(chanceCard);
+                        }
+                        break;
+                    case ServerPacketType.PrisonCardOffer:
+                        {
+                            Deconstruct.PrisonCardOffer(stream, out bool hasCard);
 
-                        TriggerPlayerBankrupt(playerID);
-                    }
-                    break;
-                case ServerPacketType.GameOver:
-                    {
-                        Deconstruct.GameOver(stream, out GameOverType gameOverType, out byte winnerID);
+                            TriggerPrisonCardOffer(hasCard);
+                        }
+                        break;
+                    case ServerPacketType.PropertyOffer:
+                        {
+                            Deconstruct.PropertyOffer(stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost, out bool isAffordable);
 
-                        TriggerGameOver(gameOverType, winnerID);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerDoubleRent:
-                    {
-                        Deconstruct.UpdatePlayerDoubleRent(stream, out byte playerID, out bool status);
+                            TriggerPropertyOffer(playerID, buildingState, baseRent, cost, isAffordable);
+                        }
+                        break;
+                    case ServerPacketType.AuctionProperty:
+                        {
+                            Deconstruct.AuctionProperty(stream, out byte playerID, out int auctionValue);
 
-                        Players[playerID].hasDoubleRentCoupon = status;
+                            TriggerPropertyAuction(playerID, auctionValue);
+                        }
+                        break;
+                    case ServerPacketType.UpdateGroupDoubleRent:
+                        {
+                            Deconstruct.UpdateGroupDoubleRent(stream, out byte groupID, out bool status);
 
-                        TriggerPlayerDoubleRentUpdate(playerID, status);
-                    }
-                    break;
-                case ServerPacketType.UpdatePlayerJailCoupon:
-                    {
-                        Deconstruct.UpdatePlayerJailCoupon(stream, out byte playerID, out bool status);
+                            TriggerUpdateGroupDoubleRent(groupID, status);
+                        }
+                        break;
+                    case ServerPacketType.PlayerBankrupt:
+                        {
+                            Deconstruct.PlayerBankrupt(stream, out byte playerID);
 
-                        Players[playerID].hasJailCoupon = status;
+                            Players[playerID].isBankrupt = true;
 
-                        TriggerPlayerJailCouponUpdate(playerID, status);
-                    }
-                    break;
-                default:
-                    break;
+                            TriggerPlayerBankrupt(playerID);
+                        }
+                        break;
+                    case ServerPacketType.GameOver:
+                        {
+                            Deconstruct.GameOver(stream, out GameOverType gameOverType, out byte winnerID);
+
+                            TriggerGameOver(gameOverType, winnerID);
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerDoubleRent:
+                        {
+                            Deconstruct.UpdatePlayerDoubleRent(stream, out byte playerID, out bool status);
+
+                            Players[playerID].hasDoubleRentCoupon = status;
+
+                            TriggerPlayerDoubleRentUpdate(playerID, status);
+                        }
+                        break;
+                    case ServerPacketType.UpdatePlayerJailCoupon:
+                        {
+                            Deconstruct.UpdatePlayerJailCoupon(stream, out byte playerID, out bool status);
+
+                            Players[playerID].hasJailCoupon = status;
+
+                            TriggerPlayerJailCouponUpdate(playerID, status);
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using PolypolyGameServer;
+﻿using PolypolyGame;
 using System;
 using System.Net.Sockets;
 using System.Text;

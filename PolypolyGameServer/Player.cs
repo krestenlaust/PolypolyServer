@@ -1,4 +1,4 @@
-﻿namespace PolypolyGameServer
+﻿namespace PolypolyGame
 {
     public class Player
     {

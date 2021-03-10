@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using static NetworkProtocol.Packet;
 
-namespace PolypolyGameServer
+namespace PolypolyGame
 {
     public class Lobby
     {

@@ -1,4 +1,4 @@
-﻿using PolypolyGameServer;
+﻿using PolypolyGame;
 using System;
 
 namespace NetworkProtocol
@@ -105,6 +105,9 @@ namespace NetworkProtocol
 
         public sealed class TileProperty
         {
+            private const float BASIC_RENT_MULTIPLIER = 0.3f;
+            private const float PER_HOUSE_ADDITIONAL_MULTIPLIER = 0.25f;
+
             public enum BuildingState : byte
             {
                 Unpurchased = 0,
@@ -120,8 +123,8 @@ namespace NetworkProtocol
 
             public int Rent =>
                 (int)Math.Round(
-                    BaseCost * (0.5f +
-                    0.25f * ((int)BuildingLevel - 1))
+                    BaseCost * (BASIC_RENT_MULTIPLIER +
+                    PER_HOUSE_ADDITIONAL_MULTIPLIER * ((int)BuildingLevel - 1))
                 );
 
             public int UpgradeCost => GameConfig.StandardConfig.UpgradePropertyCost;

@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace PolypolyGameServer
+namespace PolypolyGame
 {
     public enum TeamColor : byte
     {

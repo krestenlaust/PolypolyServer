@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Client;
-using PolypolyGameServer;
+using PolypolyGame;
 using static NetworkProtocol.GameBoard;
 
 namespace ClientBot
@@ -10,8 +12,11 @@ namespace ClientBot
     public class Bot
     {
         private readonly NetworkClient NetworkClient;
+        private StreamWriter statisticsLog;
+        private bool headerWritten;
+        private int turnCount = 0;
 
-        public Bot(string hostAddress, short port)
+        public Bot(string hostAddress, short port, bool logRoundsToFile=false)
         {
             NetworkClient = new NetworkClient();
             NetworkClient.ConnectClient(hostAddress, port);
@@ -27,6 +32,25 @@ namespace ClientBot
             NetworkClient.onUpdatePlayerTurn += PlayerTurnUpdated;
             NetworkClient.onPlayerConnected += PlayerConnected;
             NetworkClient.onNewNickname += NicknamedUpdated;
+            NetworkClient.onUpdateReadyPlayer += ReadyPlayerUpdated;
+
+            if (logRoundsToFile)
+            {
+                statisticsLog = File.CreateText("roundlog.csv");
+            }
+        }
+
+        private void ReadyPlayerUpdated(NetworkClient.UpdatePlayerReadyArgs e)
+        {
+            if (e.PlayerID.Value == NetworkClient.SelfID)
+            {
+                return;
+            }
+
+            if (NetworkClient.isHost && NetworkClient.Players.Count == 4)
+            {
+                NetworkClient.HostStartGame();
+            }
         }
 
         private void NicknamedUpdated(NetworkClient.UpdateNicknameArgs e)
@@ -48,8 +72,37 @@ namespace ClientBot
             NetworkClient.SendReadyState(true);
         }
 
+        private string LogRound()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var item in NetworkClient.Players)
+            {
+                sb.Append(item.Value.Money);
+                sb.Append(',');
+            }
+
+            return sb.ToString();
+        }
+
         private void PlayerTurnUpdated(NetworkClient.UpdatePlayerTurnArgs e)
         {
+            if (!(statisticsLog is null) && (turnCount++ % 4 == 0))
+            {
+                if (!headerWritten)
+                {
+                    foreach (var item in NetworkClient.Players)
+                    {
+                        statisticsLog.Write($"{item.Key},");
+                    }
+
+                    statisticsLog.WriteLine();
+                    headerWritten = true;
+                }
+
+                statisticsLog.WriteLine(LogRound());
+                statisticsLog.Flush();
+            }
+
             if (e.PlayerID.Value == NetworkClient.SelfID)
             {
                 NetworkClient.RollDice();
@@ -127,6 +180,11 @@ namespace ClientBot
                 }
 
                 if (property.Owner != NetworkClient.SelfID)
+                {
+                    continue;
+                }
+
+                if (property.Value < e.AuctionAmount)
                 {
                     continue;
                 }

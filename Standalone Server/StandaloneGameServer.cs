@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using PolypolyGameServer;
+using PolypolyGame;
 
 namespace Standalone_Server
 {

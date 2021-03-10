@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using ClientBot;
-using PolypolyGameServer;
+using PolypolyGame;
 
 namespace Developer_Server
 {
@@ -16,19 +16,33 @@ namespace Developer_Server
         public GameLogic GameLogic { get; private set; }
         private readonly Stopwatch frameTime = new Stopwatch();
         private List<Bot> bots = new List<Bot>();
+        private ToggleableLogger logger;
 
         /// <summary>
         /// Starts a new server on port 6060.
         /// </summary>
-        public DeveloperGameServer(bool noLogs=true)
+        public DeveloperGameServer(bool loggingEnabled)
         {
-            Lobby = new Lobby(IPAddress.Any, 6060, noLogs ? null : new SimpleLogger());
+            logger = new ToggleableLogger(loggingEnabled);
+            Lobby = new Lobby(IPAddress.Any, 6060, logger);
             Lobby.onGameStarted += (GameLogic gameLogic) => GameLogic = gameLogic;
+        }
+
+        public void EnableLogging()
+        {
+            Console.WriteLine("| Logging enabled |");
+            logger.isPrinting = true;
+        }
+
+        public void DisableLogging()
+        {
+            Console.WriteLine("| Logging disable |");
+            logger.isPrinting = false;
         }
 
         public void SpawnBot()
         {
-            bots.Add(new Bot(IPAddress.Loopback.ToString(), 6060));
+            bots.Add(new Bot(IPAddress.Loopback.ToString(), 6060, bots.Count == 0));
         }
 
         /// <summary>

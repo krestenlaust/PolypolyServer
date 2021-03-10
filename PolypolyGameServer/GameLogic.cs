@@ -5,7 +5,7 @@ using NetworkProtocol;
 using static NetworkProtocol.Packet;
 using static NetworkProtocol.GameBoard;
 
-namespace PolypolyGameServer
+namespace PolypolyGame
 {
     public class GameLogic
     {

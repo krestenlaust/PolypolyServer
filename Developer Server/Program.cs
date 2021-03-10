@@ -34,6 +34,7 @@ namespace Developer_Server
         {
             ManualDiceRoll,
             AddBot,
+            ShowLogs,
             Back,
         }
 
@@ -66,7 +67,7 @@ namespace Developer_Server
                     case MainCommand.StartServer:
                         try
                         {
-                            gameServer = new DeveloperGameServer();
+                            gameServer = new DeveloperGameServer(false);
                             token = new CancellationTokenSource();
                             gameServer.Start(token.Token);
                         }
@@ -143,6 +144,13 @@ namespace Developer_Server
                                 gameServer.SpawnBot();
 
                                 Console.WriteLine("Bot has connected");
+                                break;
+                            case GameSetting.ShowLogs:
+                                gameServer.EnableLogging();
+                                Console.WriteLine("Press anything to exit log view");
+                                Console.ReadKey();
+
+                                gameServer.DisableLogging();
                                 break;
                             case GameSetting.Back:
                                 break;
