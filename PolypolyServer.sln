@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csp
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetworkProtocol", "NetworkProtocol\NetworkProtocol.shproj", "{4DEA6930-8A6B-4798-AE57-634BFE6424E6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientBot", "ClientBot\ClientBot.csproj", "{D5C55D49-55F6-41E4-994D-0BA60A7567D6}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		NetworkProtocol\NetworkProtocol.projitems*{4dea6930-8a6b-4798-ae57-634bfe6424e6}*SharedItemsImports = 13
@@ -39,6 +41,10 @@ Global
 		{A794959A-7242-4CC0-9C97-097EC64003CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A794959A-7242-4CC0-9C97-097EC64003CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A794959A-7242-4CC0-9C97-097EC64003CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C55D49-55F6-41E4-994D-0BA60A7567D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C55D49-55F6-41E4-994D-0BA60A7567D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C55D49-55F6-41E4-994D-0BA60A7567D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C55D49-55F6-41E4-994D-0BA60A7567D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

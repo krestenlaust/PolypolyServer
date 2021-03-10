@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using ClientBot;
 using PolypolyGameServer;
 
 namespace Developer_Server
@@ -13,6 +15,7 @@ namespace Developer_Server
         public Lobby Lobby;
         public GameLogic GameLogic { get; private set; }
         private readonly Stopwatch frameTime = new Stopwatch();
+        private List<Bot> bots = new List<Bot>();
 
         /// <summary>
         /// Starts a new server on port 6060.
@@ -21,6 +24,11 @@ namespace Developer_Server
         {
             Lobby = new Lobby(IPAddress.Any, 6060, noLogs ? null : new SimpleLogger());
             Lobby.onGameStarted += (GameLogic gameLogic) => GameLogic = gameLogic;
+        }
+
+        public void SpawnBot()
+        {
+            bots.Add(new Bot(IPAddress.Loopback.ToString(), 6060));
         }
 
         /// <summary>
@@ -47,6 +55,11 @@ namespace Developer_Server
                 {
                     Lobby.Stop();
                     break;
+                }
+
+                foreach (var item in bots)
+                {
+                    item.UpdateNetwork();
                 }
 
                 Lobby.GameLoop();

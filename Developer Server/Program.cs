@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using ClientBot;
 using Sharprompt;
 using Sharprompt.Validations;
 
@@ -31,7 +33,7 @@ namespace Developer_Server
         private enum GameSetting
         {
             ManualDiceRoll,
-
+            AddBot,
             Back,
         }
 
@@ -136,6 +138,11 @@ namespace Developer_Server
                                 byte die2 = Prompt.Input<byte>("Die 2");
 
                                 gameServer.GameLogic.ThrowDiceNetwork((die1, die2));
+                                break;
+                            case GameSetting.AddBot:
+                                gameServer.SpawnBot();
+
+                                Console.WriteLine("Bot has connected");
                                 break;
                             case GameSetting.Back:
                                 break;
