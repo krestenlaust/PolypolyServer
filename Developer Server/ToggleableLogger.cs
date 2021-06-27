@@ -3,7 +3,7 @@ using System;
 
 namespace Developer_Server
 {
-    public class ToggleableLogger : SimpleLogger
+    public class ToggleableLogger : Logger
     {
         public bool isPrinting;
 

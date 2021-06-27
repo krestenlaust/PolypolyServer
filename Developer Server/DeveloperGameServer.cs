@@ -23,9 +23,11 @@ namespace Developer_Server
         /// </summary>
         public DeveloperGameServer(bool loggingEnabled)
         {
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, 6060);
+
             logger = new ToggleableLogger(loggingEnabled);
-            Lobby = new Lobby(IPAddress.Any, 6060, logger);
-            Lobby.onGameStarted += (GameLogic gameLogic) => GameLogic = gameLogic;
+            Lobby = new Lobby(endPoint, logger);
+            Lobby.GameStarted += (GameLogic gameLogic) => GameLogic = gameLogic;
         }
 
         public void EnableLogging()

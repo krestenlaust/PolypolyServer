@@ -1,10 +1,16 @@
-﻿using PolypolyGame;
-using System;
+﻿using System;
+using PolypolyGame;
 
 namespace NetworkProtocol
 {
     public class GameBoard
     {
+        public readonly TileProperty[] PropertyTiles = new TileProperty[32];
+        public readonly TileType[] TileTypes = new TileType[32];
+
+        public byte JailtileIndex;
+        public byte TraintileIndex;
+
         public enum TileType
         {
             Property,
@@ -17,12 +23,6 @@ namespace NetworkProtocol
             Upkeep,
             BigTax
         }
-
-        public readonly TileProperty[] PropertyTiles = new TileProperty[32];
-        public readonly TileType[] TileTypes = new TileType[32];
-
-        public byte JailtileIndex;
-        public byte TraintileIndex;
 
         public byte Size => (byte)TileTypes.Length;
 
@@ -105,9 +105,44 @@ namespace NetworkProtocol
 
         public sealed class TileProperty
         {
-            private const float BASIC_RENT_MULTIPLIER = 0.3f;
-            private const float PER_HOUSE_ADDITIONAL_MULTIPLIER = 0.25f;
+            private const float BasicRentMultiplier = 0.3f;
+            private const float PerHouseAdditionalMultiplier = 0.25f;
 
+            public readonly byte GroupID;
+            public BuildingState BuildingLevel = BuildingState.Unpurchased;
+            public byte Owner = byte.MaxValue;
+
+            public int BaseCost { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TileProperty"/> class.
+            /// </summary>
+            /// <param name="cost">The amount of money required to purchase the property.</param>
+            /// <param name="groupID">The group ID it belongs to.</param>
+            public TileProperty(int cost, byte groupID)
+            {
+                BaseCost = cost;
+                GroupID = groupID;
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TileProperty"/> class.
+            /// </summary>
+            /// <param name="cost">The amount of money required to purchase the property.</param>
+            /// <param name="groupID">The group ID it belongs to.</param>
+            /// <param name="owner"></param>
+            /// <param name="buildingLevel"></param>
+            public TileProperty(int cost, byte groupID, byte owner, BuildingState buildingLevel)
+            {
+                BaseCost = cost;
+                Owner = owner;
+                BuildingLevel = buildingLevel;
+                GroupID = groupID;
+            }
+
+            /// <summary>
+            /// Describes the state of a building.
+            /// </summary>
             public enum BuildingState : byte
             {
                 Unpurchased = 0,
@@ -116,34 +151,15 @@ namespace NetworkProtocol
                 Level3 = 3
             }
 
-            public BuildingState BuildingLevel = BuildingState.Unpurchased;
-            public byte Owner = byte.MaxValue;
-            public int BaseCost { get; }
-            public readonly byte GroupID;
-
             public int Rent =>
                 (int)Math.Round(
-                    BaseCost * (BASIC_RENT_MULTIPLIER +
-                    PER_HOUSE_ADDITIONAL_MULTIPLIER * ((int)BuildingLevel - 1))
-                );
+                    BaseCost * (BasicRentMultiplier +
+                    PerHouseAdditionalMultiplier * ((int)BuildingLevel - 1)));
 
             public int UpgradeCost => GameConfig.StandardConfig.UpgradePropertyCost;
 
             public int Value => BaseCost + UpgradeCost * ((byte)BuildingLevel - 1);
 
-            public TileProperty(int cost, byte groupID)
-            {
-                BaseCost = cost;
-                GroupID = groupID;
-            }
-
-            public TileProperty(int cost, byte owner, BuildingState buildingLevel, byte groupID)
-            {
-                BaseCost = cost;
-                Owner = owner;
-                BuildingLevel = buildingLevel;
-                GroupID = groupID;
-            }
         }
     }
 }

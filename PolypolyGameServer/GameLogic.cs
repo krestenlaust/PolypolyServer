@@ -1,14 +1,59 @@
-﻿using NetworkProtocol;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetworkProtocol;
 using static NetworkProtocol.GameBoard;
 using static NetworkProtocol.Packet;
 
 namespace PolypolyGame
 {
+    /// <summary>
+    /// Handles all logic of game, everything from money to turns.
+    /// </summary>
     public class GameLogic
     {
+        public readonly GameBoard ServerBoard;
+        public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
+
+        private readonly GameConfig gameConfig;
+        private readonly Lobby lobby;
+        private readonly Queue<byte[]> queuedPackets = new Queue<byte[]>();
+        private readonly Random random = new Random();
+        private TileProperty consideredProperty;
+        private byte consideredPropertyPosition;
+        private int auctionAmount;
+        private byte currentPlayerId;
+        private bool extraTurn;
+        private bool hasGameStateUpdated = true;
+
+        /// <summary>
+        ///     State after animation is done.
+        /// </summary>
+        private LinkedList<GameState> gameStates;
+        private GameState previusGameState = GameState.WaitingForAnimation;
+        private (byte, byte) recentDiceThrowResult;
+        private float timeTillSkipAnimation = 8;
+        private int turnCount = -1;
+        private PlayerChoice waitingForChoice;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GameLogic"/> class.
+        /// </summary>
+        /// <param name="gameServer"></param>
+        /// <param name="clientIDs"></param>
+        /// <param name="gameConfig"></param>
+        public GameLogic(Lobby gameServer, List<byte> clientIDs, GameConfig gameConfig)
+        {
+            lobby = gameServer;
+            ServerBoard = GenerateStandardBoard();
+            this.gameConfig = gameConfig;
+
+            foreach (var item in clientIDs)
+            {
+                Players[item] = new Player();
+            }
+        }
+
         private enum PlayerChoice
         {
             PropertyOffer,
@@ -24,46 +69,6 @@ namespace PolypolyGame
             WaitingForAnimation,
             AnimationDone,
             NextTurn
-        }
-
-        public readonly GameBoard ServerBoard;
-        public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
-
-        private readonly GameConfig gameConfig;
-        private readonly Lobby lobby;
-        private readonly Queue<byte[]> queuedPackets = new Queue<byte[]>();
-        private readonly Random random = new Random();
-        private TileProperty consideredProperty;
-        private byte consideredPropertyPosition;
-        private int auctionAmount;
-        private byte currentPlayerId;
-        private bool extraTurn;
-        private bool hasGameStateUpdated = true;
-        /// <summary>
-        ///     State after animation is done.
-        /// </summary>
-        private LinkedList<GameState> gameStates;
-        private GameState previusGameState = GameState.WaitingForAnimation;
-        private (byte, byte) recentDiceThrowResult;
-        private float timeTillSkipAnimation = 8;
-        private int turnCount = -1;
-        private PlayerChoice waitingForChoice;
-
-        public GameLogic(Lobby gameServer, List<byte> clientIDs, GameConfig gameConfig)
-        {
-            lobby = gameServer;
-            ServerBoard = GenerateStandardBoard();
-            this.gameConfig = gameConfig;
-
-            foreach (var item in clientIDs)
-            {
-                Players[item] = new Player();
-            }
-        }
-
-        private void Print(string value)
-        {
-            lobby.log?.Print("[Game] " + value);
         }
 
         public void UpdateState()
@@ -211,7 +216,7 @@ namespace PolypolyGame
                             AddPlayerMoney(currentPlayerId, propertyValue);
                             UpdateBoardProperty(auctionIndex, propertyForAuction);
 
-                            //SyncronizeEffects();
+                            // SyncronizeEffects();
 
                             Print("Auctioned building");
 
@@ -349,6 +354,11 @@ namespace PolypolyGame
             {
                 Print("Error has occurred");
             }
+        }
+
+        private void Print(string value)
+        {
+            lobby.log?.Print("[Game] " + value);
         }
 
         private void HandlePlayerLandOnTile()
@@ -510,9 +520,11 @@ namespace PolypolyGame
         }
 
         /// <summary>
+        /// Subtracts a specified amount of money from a player, optionally triggers an auction if the amount falls below 0.
         /// </summary>
-        /// <param name="playerID"></param>
-        /// <param name="loss"></param>
+        /// <param name="playerID">The ID of the player to subtract money.</param>
+        /// <param name="loss">The amount of money to subtract.</param>
+        /// <param name="triggerAuction">Whether an auction should be triggered, given the players balance is below 0 after subtraction.</param>
         /// <returns>The amount subtracted</returns>
         public int SubtractPlayerMoney(byte playerID, int loss, bool triggerAuction)
         {
@@ -557,7 +569,7 @@ namespace PolypolyGame
         }
 
         /// <summary>
-        ///     Updates player values <c>Position</c>.
+        /// Updates player values <c>Position</c>.
         /// </summary>
         /// <param name="playerID"></param>
         /// <param name="newPosition"></param>
@@ -578,7 +590,7 @@ namespace PolypolyGame
         }
 
         /// <summary>
-        ///     Updates a gameServer.Players jailtime and notifies all clients.
+        /// Updates a gameServer.Players jailtime and notifies all clients.
         /// </summary>
         /// <param name="playerID"></param>
         /// <param name="jailturns"></param>
@@ -606,6 +618,102 @@ namespace PolypolyGame
             var packet = Construct.PlayerUpdateMoney(playerID, newAmount, isIncreased);
 
             queuedPackets.Enqueue(packet);
+        }
+
+        /// <summary>
+        /// Throws dice for current player.
+        /// </summary>
+        /// <param name="dieResults"></param>
+        public void ThrowDiceNetwork((byte Die1, byte Die2) dieResults) => ThrowDiceNetwork(currentPlayerId, dieResults);
+
+        /// <summary>
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="dieResults"></param>
+        public void ThrowDiceNetwork(byte playerID, (byte Die1, byte Die2) dieResults)
+        {
+            if (playerID != currentPlayerId)
+            {
+                Print("Wrong player requested dice roll");
+                return;
+            }
+
+            recentDiceThrowResult = dieResults;
+
+            lobby.BroadcastPacket(Construct.DicerollResult(playerID, recentDiceThrowResult.Item1, recentDiceThrowResult.Item2));
+        }
+
+        public void SyncronizeEffects()
+        {
+            Print("Syncronizing");
+
+            while (queuedPackets.Count > 0)
+            {
+                lobby.BroadcastPacket(queuedPackets.Dequeue());
+            }
+        }
+
+        /// <summary>
+        /// Updates player values <c>Position</c> and <c>JailTurns</c>.
+        /// </summary>
+        /// <param name="playerID">The ID of the player to send to jail.</param>
+        public void SendToJail(byte playerID)
+        {
+            // no jail for you sir!
+            if (Players[playerID].hasJailCoupon)
+            {
+                UpdateJailCouponStatus(playerID, false);
+                return;
+            }
+
+            Players[playerID].Position = ServerBoard.JailtileIndex;
+            Players[playerID].JailTurns = gameConfig.SentenceDuration;
+
+            queuedPackets.Enqueue(Construct.PlayerJail(playerID, gameConfig.SentenceDuration));
+            queuedPackets.Enqueue(Construct.UpdatePlayerPosition(playerID, ServerBoard.JailtileIndex, MoveType.DirectMove));
+
+            if (gameStates?.First?.Value != GameState.WaitingForAnimation)
+            {
+                gameStates.AddLast(GameState.WaitingForAnimation);
+            }
+
+            // disabled for now
+            //waitingForChoice = PlayerChoice.JailOffer;
+            //gameStates.AddLast(GameState.WaitingForPlayerChoice);
+            //MakeJailOffer(playerID);
+        }
+
+        /// <summary>
+        /// Throws the dice and returns their state. (Pseudo-random).
+        /// </summary>
+        /// <returns>Returns a tuple of two, each with random values between 1 and 6 (inclusive).</returns>
+        public (byte Die1, byte Die2) GetDiceResult() => ((byte)random.Next(1, 7), (byte)random.Next(1, 7));
+
+        private byte GetNextPlayerID()
+        {
+            byte newTurn = currentPlayerId;
+
+            int playerCount = Players.Count;
+
+            int i = 0;
+            for (int id = newTurn; i < playerCount; id = (id + 1) % playerCount, i++)
+            {
+                // skip player who had turn now
+                if (i == 0)
+                {
+                    continue;
+                }
+
+                if (Players[(byte)id].isBankrupt)
+                {
+                    continue;
+                }
+
+                newTurn = (byte)id;
+                break;
+            }
+
+            return newTurn;
         }
 
         /// <summary>
@@ -637,95 +745,12 @@ namespace PolypolyGame
 
         private void ClearAnimationDone()
         {
-            foreach (var id in Players.Keys) Players[id].isAnimationDone = false;
+            foreach (var id in Players.Keys)
+            {
+                Players[id].isAnimationDone = false;
+            }
+
             Print("Reset animation done signals");
-        }
-
-        private byte GetNextPlayerID()
-        {
-            byte newTurn = currentPlayerId;
-
-            int playerCount = Players.Count;
-
-            int i = 0;
-            for (int id = newTurn; i < playerCount; id = (id + 1) % playerCount, i++)
-            {
-                // skip player who had turn now
-                if (i == 0)
-                    continue;
-
-                if (Players[(byte)id].isBankrupt)
-                {
-                    continue;
-                }
-
-                newTurn = (byte)id;
-                break;
-            }
-
-            return newTurn;
-        }
-
-        /// <summary>
-        /// Throws dice for current player.
-        /// </summary>
-        /// <param name="dieResult"></param>
-        public void ThrowDiceNetwork((byte, byte) dieResult) => ThrowDiceNetwork(currentPlayerId, dieResult);
-
-        /// <summary>
-        /// </summary>
-        /// <param name="playerID"></param>
-        public void ThrowDiceNetwork(byte playerID, (byte, byte) dieResult)
-        {
-            if (playerID != currentPlayerId)
-            {
-                Print("Wrong player requested dice roll");
-                return;
-            }
-
-            recentDiceThrowResult = dieResult;
-
-            lobby.BroadcastPacket(Construct.DicerollResult(playerID, recentDiceThrowResult.Item1, recentDiceThrowResult.Item2));
-        }
-
-        public void SyncronizeEffects()
-        {
-            Print("Syncronizing");
-
-            while (queuedPackets.Count > 0)
-            {
-                lobby.BroadcastPacket(queuedPackets.Dequeue());
-            }
-        }
-
-        /// <summary>
-        ///     Updates player values <c>Position</c> and <c>JailTurns</c>.
-        /// </summary>
-        /// <param name="playerID"></param>
-        public void SendToJail(byte playerID)
-        {
-            // no jail for you sir!
-            if (Players[playerID].hasJailCoupon)
-            {
-                UpdateJailCouponStatus(playerID, false);
-                return;
-            }
-
-            Players[playerID].Position = ServerBoard.JailtileIndex;
-            Players[playerID].JailTurns = gameConfig.SentenceDuration;
-
-            queuedPackets.Enqueue(Construct.PlayerJail(playerID, gameConfig.SentenceDuration));
-            queuedPackets.Enqueue(Construct.UpdatePlayerPosition(playerID, ServerBoard.JailtileIndex, MoveType.DirectMove));
-
-            if (gameStates?.First?.Value != GameState.WaitingForAnimation)
-            {
-                gameStates.AddLast(GameState.WaitingForAnimation);
-            }
-
-            // disabled for now
-            //waitingForChoice = PlayerChoice.JailOffer;
-            //gameStates.AddLast(GameState.WaitingForPlayerChoice);
-            //MakeJailOffer(playerID);
         }
 
         private void ChanceCardDrawn(ChanceCard card)
@@ -740,8 +765,7 @@ namespace PolypolyGame
 
         private void MakePropertyOffer(byte playerID, TileProperty property, bool canAfford, int cost)
         {
-            queuedPackets.Enqueue(Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent,
-                cost, canAfford));
+            queuedPackets.Enqueue(Construct.PropertyOffer(playerID, property.BuildingLevel, property.Rent, cost, canAfford));
         }
 
         private void UpdateGroupMonopoly(byte groupID, bool status)
@@ -757,7 +781,7 @@ namespace PolypolyGame
 
         private void SyncronizeBoard()
         {
-            var propertyCount = ServerBoard.PropertyTiles.Count(Tile => !(Tile is null));
+            var propertyCount = ServerBoard.PropertyTiles.Count(tile => !(tile is null));
 
             var packet = new byte[Construct.SIZE_UpdateBoardProperty * propertyCount];
 
@@ -765,7 +789,9 @@ namespace PolypolyGame
             for (var i = 0; i < ServerBoard.PropertyTiles.Length; i++)
             {
                 if (ServerBoard.PropertyTiles[i] == null)
+                {
                     continue;
+                }
 
                 var partialPacket = Construct.UpdateBoardProperty((byte)i, ServerBoard.PropertyTiles[i]);
                 partialPacket.CopyTo(packet, packetPtr);
@@ -784,13 +810,6 @@ namespace PolypolyGame
 
             queuedPackets.Enqueue(Construct.AuctionProperty(currentPlayerId, amountToAuction));
             SyncronizeEffects();
-        }
-
-        public (byte, byte) GetDiceResult()
-        {
-            // Maybe turn this into a function returning 2 bytes instead to make animations on client-side.
-
-            return ((byte)random.Next(1, 7), (byte)random.Next(1, 7));
         }
     }
 }

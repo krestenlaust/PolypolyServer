@@ -1,12 +1,18 @@
-﻿using PolypolyGame;
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using PolypolyGame;
 
 namespace NetworkProtocol
 {
+    /// <summary>
+    /// Helper class for constructing packets.
+    /// </summary>
     public static class Packet
     {
+        /// <summary>
+        /// Types of chancecards.
+        /// </summary>
         public enum ChanceCard : byte
         {
             MoneyAdd,
@@ -20,27 +26,65 @@ namespace NetworkProtocol
             ForceAuction,
 
             MoveFourTilesBack,
-            Blank
+            Blank,
         }
 
+        /// <summary>
+        /// Describes why a client disconnected.
+        /// </summary>
         public enum DisconnectReason : byte
         {
+            /// <summary>
+            /// The client lost connection.
+            /// </summary>
             LostConnection = 1,
+
+            /// <summary>
+            /// The client left the game/lobby.
+            /// </summary>
             Left = 2,
-            Kicked = 3
+
+            /// <summary>
+            /// The client forced to leave the game by the host.
+            /// </summary>
+            Kicked = 3,
         }
 
+        /// <summary>
+        /// Describes the way a player avatar should move.
+        /// </summary>
         public enum MoveType : byte
         {
+            /// <summary>
+            /// Move player avatar a step at a time.
+            /// </summary>
             Walk,
-            DirectMove
+
+            /// <summary>
+            /// Move player avatar — without steps — in a straight line.
+            /// </summary>
+            DirectMove,
         }
 
+        /// <summary>
+        /// The different ways a game can end.
+        /// </summary>
         public enum GameOverType : byte
         {
+            /// <summary>
+            /// A player achieved an monopoly.
+            /// </summary>
             Monopoly,
+
+            /// <summary>
+            /// The time ran out.
+            /// </summary>
             Time,
-            HostEnded
+
+            /// <summary>
+            /// The host ended the game.
+            /// </summary>
+            HostEnded,
         }
 
         /// <summary>
@@ -93,6 +137,9 @@ namespace NetworkProtocol
             UpdatePlayerJailCoupon = 46, // ✓
         }
 
+        /// <summary>
+        /// Helper class for constructing packets.
+        /// </summary>
         public static class Construct
         {
             public const int SIZE_PlayerJail = sizeof(byte) + sizeof(byte) + sizeof(byte);
@@ -129,7 +176,7 @@ namespace NetworkProtocol
                 {
                     (byte)ServerPacketType.UpdateGroupDoubleRent,
                     groupID,
-                    status ? (byte)1 :(byte)0
+                    (byte)(status ? 1 : 0)
                 };
             }
 
@@ -166,13 +213,14 @@ namespace NetworkProtocol
             /// <summary>
             ///  Used by server.
             /// </summary>
+            /// <param name="playerID"></param>
             /// <param name="buildingState"></param>
             /// <param name="baseRent"></param>
             /// <param name="cost"></param>
             /// <param name="isAffordable"></param>
             /// <returns></returns>
-            public static byte[] PropertyOffer(byte playerID, GameBoard.TileProperty.BuildingState buildingState, int baseRent,
-                int cost, bool isAffordable)
+            public static byte[] PropertyOffer(
+                byte playerID, GameBoard.TileProperty.BuildingState buildingState, int baseRent, int cost, bool isAffordable)
             {
                 var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(GameBoard.TileProperty.BuildingState) +
                                       sizeof(int) + sizeof(int) + sizeof(bool)];
@@ -193,7 +241,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Only sent to single player
+            /// Used by server. Only sent to single player
             /// </summary>
             /// <param name="hasCard"></param>
             /// <returns></returns>
@@ -208,7 +256,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client. If useCard, then buy if player does not own card, otherwise signal diceroll.
+            /// Used by client. If useCard, then buy if player does not own card, otherwise signal diceroll.
             /// </summary>
             /// <param name="useCard"></param>
             /// <returns></returns>
@@ -223,7 +271,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client for saying telling whether to purchase or not.
+            /// Used by client for saying telling whether to purchase or not.
             /// </summary>
             /// <param name="purchase"></param>
             /// <returns></returns>
@@ -238,7 +286,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             public static byte[] AnimationDone()
             {
@@ -246,7 +294,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             public static byte[] StartGame()
             {
@@ -254,7 +302,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server.
+            /// Used by server.
             /// </summary>
             public static byte[] GameStarted()
             {
@@ -292,7 +340,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             /// <param name="color"></param>
             /// <returns></returns>
@@ -355,6 +403,7 @@ namespace NetworkProtocol
             /// </summary>
             /// <param name="playerID"></param>
             /// <param name="jailTurnsLeft"></param>
+            /// <returns></returns>
             public static byte[] PlayerJail(byte playerID, byte jailTurnsLeft)
             {
                 var packet = new byte[sizeof(ServerPacketType) + 2];
@@ -367,7 +416,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client. Sends a request to roll the dice (to the server).
+            /// Used by client. Sends a request to roll the dice (to the server).
             /// </summary>
             /// <returns></returns>
             public static byte[] DicerollRequest()
@@ -376,7 +425,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Updates the client-board state. Used
+            /// Used by server. Updates the client-board state. Used
             /// </summary>
             /// <param name="tileID"></param>
             /// <param name="tile"></param>
@@ -404,7 +453,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Broadcast to clients to inform who is next.
+            /// Used by server. Broadcast to clients to inform who is next.
             /// </summary>
             /// <param name="playerID"></param>
             /// <returns></returns>
@@ -419,7 +468,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             /// <returns></returns>
             public static byte[] ReadyPacket()
@@ -438,7 +487,7 @@ namespace NetworkProtocol
 
 
             /// <summary>
-            ///     Used by server. Broadcast to all clients when recieving a ready/unready packet from a client.
+            /// Used by server. Broadcast to all clients when recieving a ready/unready packet from a client.
             /// </summary>
             /// <param name="playerID"></param>
             /// <param name="readyStatus"></param>
@@ -456,7 +505,7 @@ namespace NetworkProtocol
 
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             /// <returns></returns>
             public static byte[] LeaveGamePacket()
@@ -465,7 +514,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client. Sent to server to inform nickname update.
+            /// Used by client. Sent to server to inform nickname update.
             /// </summary>
             /// <param name="nickname"></param>
             /// <returns></returns>
@@ -487,7 +536,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Broadcast to clients to inform diceroll result.
+            /// Used by server. Broadcast to clients to inform diceroll result.
             /// </summary>
             /// <param name="playerID"></param>
             /// <param name="die1Result"></param>
@@ -506,7 +555,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Broadcast to clients to inform nickname update.
+            /// Used by server. Broadcast to clients to inform nickname update.
             /// </summary>
             /// <param name="nickname"></param>
             /// <param name="playerID"></param>
@@ -528,7 +577,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Sent from server to connecting client to inform given player ID.
+            /// Used by server. Sent from server to connecting client to inform given player ID.
             /// </summary>
             /// <param name="playerID"></param>
             /// <returns></returns>
@@ -542,7 +591,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Broadcast to clients to inform host change or simply identify the host.
+            /// Used by server. Broadcast to clients to inform host change or simply identify the host.
             /// </summary>
             /// <param name="playerID"></param>
             /// <returns></returns>
@@ -557,7 +606,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server. Broadcast to clients to inform position chance.
+            /// Used by server. Broadcast to clients to inform position chance.
             /// </summary>
             /// <param name="playerID"></param>
             /// <param name="newPosition"></param>
@@ -590,7 +639,7 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by server.
+            /// Used by server.
             /// </summary>
             /// <param name="playerID"></param>
             /// <param name="permanent"></param>
@@ -628,15 +677,19 @@ namespace NetworkProtocol
             }
         }
 
+        /// <summary>
+        /// Helper class for deconstructing packets by networkstream.
+        /// </summary>
         public static class Deconstruct
         {
             #region For server
+
             /// <summary>
             /// Used by client.
             /// </summary>
+            /// <param name="stream"></param>
             /// <param name="gameOverType"></param>
             /// <param name="winner"></param>
-            /// <returns></returns>
             public static void GameOver(NetworkStream stream, out GameOverType gameOverType, out byte winner)
             {
                 gameOverType = (GameOverType)stream.ReadByte();
@@ -724,8 +777,8 @@ namespace NetworkProtocol
                 playerID = (byte)stream.ReadByte();
             }
 
-            public static void PropertyOffer(NetworkStream stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost,
-                out bool isAffordable)
+            public static void PropertyOffer(
+                NetworkStream stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost, out bool isAffordable)
             {
                 playerID = (byte)stream.ReadByte();
                 buildingState = (GameBoard.TileProperty.BuildingState)stream.ReadByte();
@@ -790,8 +843,7 @@ namespace NetworkProtocol
                 jailTurnsLeft = (byte)stream.ReadByte();
             }
 
-            public static void UpdatePlayerPosition(NetworkStream stream, out byte playerID, out byte newPosition,
-                out MoveType moveType)
+            public static void UpdatePlayerPosition(NetworkStream stream, out byte playerID, out byte newPosition, out MoveType moveType)
             {
                 playerID = (byte)stream.ReadByte();
                 newPosition = (byte)stream.ReadByte();
@@ -799,19 +851,19 @@ namespace NetworkProtocol
             }
 
             /// <summary>
-            ///     Used by client.
+            /// Used by client.
             /// </summary>
             /// <param name="stream"></param>
             /// <param name="playerID"></param>
-            /// <param name="diceResult"></param>
-            public static void DicerollResult(NetworkStream stream, out byte playerID, out (byte, byte) diceResult)
+            /// <param name="dieResults"></param>
+            public static void DicerollResult(NetworkStream stream, out byte playerID, out (byte Die1, byte Die2) dieResults)
             {
                 playerID = (byte)stream.ReadByte();
-                diceResult = ((byte)stream.ReadByte(), (byte)stream.ReadByte());
+                dieResults = ((byte)stream.ReadByte(), (byte)stream.ReadByte());
             }
 
             /// <summary>
-            ///     Used by client
+            /// Used by client.
             /// </summary>
             /// <param name="stream"></param>
             /// <param name="playerID"></param>
@@ -827,8 +879,8 @@ namespace NetworkProtocol
             /// <param name="playerID"></param>
             /// <param name="permanent"></param>
             /// <param name="disconnectReason"></param>
-            public static void PlayerDisconnected(NetworkStream stream, out byte playerID, out bool permanent,
-                out DisconnectReason disconnectReason)
+            public static void PlayerDisconnected(
+                NetworkStream stream, out byte playerID, out bool permanent, out DisconnectReason disconnectReason)
             {
                 playerID = (byte)stream.ReadByte();
                 permanent = stream.ReadByte() == 1;
@@ -852,8 +904,7 @@ namespace NetworkProtocol
             /// <param name="playerID"></param>
             /// <param name="newAmount"></param>
             /// <param name="isIncreased"></param>
-            public static void UpdatePlayerMoney(NetworkStream stream, out byte playerID, out int newAmount,
-                out bool isIncreased)
+            public static void UpdatePlayerMoney(NetworkStream stream, out byte playerID, out int newAmount, out bool isIncreased)
             {
                 playerID = (byte)stream.ReadByte();
 
@@ -882,8 +933,7 @@ namespace NetworkProtocol
             /// <param name="stream"></param>
             /// <param name="tileID"></param>
             /// <param name="tile"></param>
-            public static void UpdateBoardProperty(NetworkStream stream, out byte tileID,
-                out GameBoard.TileProperty tile)
+            public static void UpdateBoardProperty(NetworkStream stream, out byte tileID, out GameBoard.TileProperty tile)
             {
                 tileID = (byte)stream.ReadByte();
                 byte owner = (byte)stream.ReadByte();
@@ -895,7 +945,7 @@ namespace NetworkProtocol
 
                 var baseRent = BitConverter.ToInt32(baseRentBytes, 0);
 
-                tile = new GameBoard.TileProperty(baseRent, owner, buildingState, groupID);
+                tile = new GameBoard.TileProperty(baseRent, groupID, owner, buildingState);
             }
 
             public static void DrawChanceCard(NetworkStream stream, out ChanceCard chanceCard)

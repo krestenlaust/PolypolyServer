@@ -9,13 +9,13 @@ namespace Standalone_Server
 {
     public class StandaloneGameServer
     {
-        private const int FramesPerSecondCap = 30;
+        private const int UpdatesPerSecondCap = 30;
         private Lobby lobby;
         private readonly Stopwatch frameTime = new Stopwatch();
 
         public StandaloneGameServer(IPAddress address, short port)
         {
-            lobby = new Lobby(address, port);
+            lobby = new Lobby(new IPEndPoint(address, port));
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Standalone_Server
         {
             while (true)
             {
-                double waitDuration = Math.Max(0, 1000 / FramesPerSecondCap - (int)frameTime.ElapsedMilliseconds);
+                double waitDuration = Math.Max(0, 1000 / UpdatesPerSecondCap - (int)frameTime.ElapsedMilliseconds);
                 bool cancelled = token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(waitDuration));
 
                 frameTime.Restart();

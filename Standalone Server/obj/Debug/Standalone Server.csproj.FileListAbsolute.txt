@@ -24,7 +24,7 @@ C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\De
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\PolypolyGameServer.dll
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\System.ComponentModel.Annotations.dll
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\bin\Debug\PolypolyGameServer.pdb
-C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csprojAssemblyReference.cache
+C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csproj.AssemblyReference.cache
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csproj.CoreCompileInputs.cache
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.csproj.CopyComplete
 C:\Users\kress\Documents\Unity Projects\Monopoly\Server\Standalone Server\obj\Debug\Standalone Server.exe
