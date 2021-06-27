@@ -1,12 +1,9 @@
-﻿using System;
+﻿using Sharprompt;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using ClientBot;
-using Sharprompt;
-using Sharprompt.Validations;
 
 namespace Developer_Server
 {
@@ -20,7 +17,7 @@ namespace Developer_Server
             StartServer,
             Close,
         }
-        
+
         private enum PlayerSetting
         {
             Money,

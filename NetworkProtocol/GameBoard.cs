@@ -24,7 +24,7 @@ namespace NetworkProtocol
         public byte JailtileIndex;
         public byte TraintileIndex;
 
-        public byte Size => (byte) TileTypes.Length;
+        public byte Size => (byte)TileTypes.Length;
 
         public static GameBoard GenerateStandardBoard()
         {

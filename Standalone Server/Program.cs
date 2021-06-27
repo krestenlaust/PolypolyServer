@@ -28,7 +28,7 @@ namespace Standalone_Server
 
             StandaloneGameServer singleGameServer = new StandaloneGameServer(address, port);
             StartGameServer(singleGameServer);
-            
+
             ConsoleKey key;
             do
             {

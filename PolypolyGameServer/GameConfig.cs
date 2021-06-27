@@ -12,17 +12,17 @@
         public int TaxAmount { get; set; }
 
         /// <summary>
-        ///     The amount of money the <c>MoneyAdd</c> chancecard rewards.
+        /// The amount of money the <c>MoneyAdd</c> chancecard rewards.
         /// </summary>
         public int ChanceCardMoneyReward { get; set; }
 
         /// <summary>
-        ///     The amount of money the <c>MoneyDeduct</c> chancecard deducts.
+        /// The amount of money the <c>MoneyDeduct</c> chancecard deducts.
         /// </summary>
         public int ChanceCardMoneyPenalty { get; set; }
 
         /// <summary>
-        ///     The money given instead of an extra prison coupon.
+        /// The money given instead of an extra prison coupon.
         /// </summary>
         public int ChanceCardPrisonCouponWorth { get; set; }
 

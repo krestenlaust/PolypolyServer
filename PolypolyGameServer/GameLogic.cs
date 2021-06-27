@@ -1,9 +1,9 @@
-﻿using System;
+﻿using NetworkProtocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NetworkProtocol;
-using static NetworkProtocol.Packet;
 using static NetworkProtocol.GameBoard;
+using static NetworkProtocol.Packet;
 
 namespace PolypolyGame
 {
@@ -25,7 +25,7 @@ namespace PolypolyGame
             AnimationDone,
             NextTurn
         }
-        
+
         public readonly GameBoard ServerBoard;
         public readonly Dictionary<byte, Player> Players = new Dictionary<byte, Player>();
 
@@ -48,7 +48,7 @@ namespace PolypolyGame
         private float timeTillSkipAnimation = 8;
         private int turnCount = -1;
         private PlayerChoice waitingForChoice;
-        
+
         public GameLogic(Lobby gameServer, List<byte> clientIDs, GameConfig gameConfig)
         {
             lobby = gameServer;
@@ -163,7 +163,7 @@ namespace PolypolyGame
                                 SubtractPlayerMoney(currentPlayerId, cost, false);
                                 UpdateBoardProperty(consideredPropertyPosition, consideredProperty);
                             }
-                            
+
                             SyncronizeEffects();
 
                             consideredProperty = null;
@@ -240,7 +240,7 @@ namespace PolypolyGame
 
                         SyncronizeEffects();
                         ClearAnimationDone();
-                        
+
                         break;
                     }
 
@@ -248,7 +248,7 @@ namespace PolypolyGame
                     gameStates.AddFirst(GameState.WaitingForAnimation);
                     break;
                 case GameState.WaitingForDiceThrow:
-                    if (hasGameStateUpdated) 
+                    if (hasGameStateUpdated)
                         Print("Waiting for dice throw");
 
                     if (timeTillSkipAnimation <= 0)
@@ -272,7 +272,7 @@ namespace PolypolyGame
 
                     extraTurn = false;
 
-                    var diceResult = (byte) (recentDiceThrowResult.Item1 + recentDiceThrowResult.Item2);
+                    var diceResult = (byte)(recentDiceThrowResult.Item1 + recentDiceThrowResult.Item2);
                     var diceDouble = recentDiceThrowResult.Item1 == recentDiceThrowResult.Item2;
 
                     // Check if passed go
@@ -362,7 +362,7 @@ namespace PolypolyGame
                     break;
                 case TileType.GotoJail:
                     SendToJail(currentPlayerId);
-                    
+
                     // Animation is queued on client anyway.
                     //SyncronizeEffects();
 
@@ -380,7 +380,7 @@ namespace PolypolyGame
                     int ownedProperties = ServerBoard.PropertyTiles.Count(p => p?.Owner == currentPlayerId);
 
                     int upkeepCost = gameConfig.TaxAmount / 5 * ownedProperties;
-                    
+
                     SubtractPlayerMoney(currentPlayerId, upkeepCost, true);
                     break;
                 case TileType.Property:
@@ -433,7 +433,7 @@ namespace PolypolyGame
                     break;
                 case TileType.ChanceCard:
                     var chanceCards = Enum.GetValues(typeof(ChanceCard));
-                    var card = (ChanceCard) chanceCards.GetValue(random.Next(chanceCards.Length));
+                    var card = (ChanceCard)chanceCards.GetValue(random.Next(chanceCards.Length));
 
                     ChanceCardDrawn(card);
 
@@ -475,7 +475,7 @@ namespace PolypolyGame
                             HandlePlayerLandOnTile();
                             break;
                         case ChanceCard.MoveFourTilesBack:
-                            UpdatePlayerPosition(currentPlayerId, (byte) (position - 4), MoveType.Walk);
+                            UpdatePlayerPosition(currentPlayerId, (byte)(position - 4), MoveType.Walk);
 
                             HandlePlayerLandOnTile();
                             break;
@@ -615,7 +615,7 @@ namespace PolypolyGame
         {
             Print("Game over! " + Enum.GetName(typeof(GameOverType), gameOverType) + ", winner: " + winner);
             queuedPackets.Enqueue(Construct.GameOver(gameOverType, winner));
-            
+
             SyncronizeEffects();
             lobby.EndGame();
         }
@@ -767,7 +767,7 @@ namespace PolypolyGame
                 if (ServerBoard.PropertyTiles[i] == null)
                     continue;
 
-                var partialPacket = Construct.UpdateBoardProperty((byte) i, ServerBoard.PropertyTiles[i]);
+                var partialPacket = Construct.UpdateBoardProperty((byte)i, ServerBoard.PropertyTiles[i]);
                 partialPacket.CopyTo(packet, packetPtr);
                 packetPtr += Construct.SIZE_UpdateBoardProperty;
             }
@@ -790,7 +790,7 @@ namespace PolypolyGame
         {
             // Maybe turn this into a function returning 2 bytes instead to make animations on client-side.
 
-            return ((byte) random.Next(1, 7), (byte) random.Next(1, 7));
+            return ((byte)random.Next(1, 7), (byte)random.Next(1, 7));
         }
     }
 }

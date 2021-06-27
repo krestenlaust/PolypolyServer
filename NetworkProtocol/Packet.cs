@@ -177,9 +177,9 @@ namespace NetworkProtocol
                 var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(GameBoard.TileProperty.BuildingState) +
                                       sizeof(int) + sizeof(int) + sizeof(bool)];
 
-                packet[0] = (byte) ServerPacketType.PropertyOffer;
+                packet[0] = (byte)ServerPacketType.PropertyOffer;
                 packet[1] = playerID;
-                packet[2] = (byte) buildingState;
+                packet[2] = (byte)buildingState;
 
                 var baseRentBytes = BitConverter.GetBytes(baseRent);
                 baseRentBytes.CopyTo(packet, 3);
@@ -201,7 +201,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(byte) + sizeof(bool)];
 
-                packet[0] = (byte) ServerPacketType.PrisonCardOffer;
+                packet[0] = (byte)ServerPacketType.PrisonCardOffer;
                 packet[1] = BitConverter.GetBytes(hasCard)[0];
 
                 return packet;
@@ -242,7 +242,7 @@ namespace NetworkProtocol
             /// </summary>
             public static byte[] AnimationDone()
             {
-                return new[] {(byte)ClientPacketType.AnimationDone};
+                return new[] { (byte)ClientPacketType.AnimationDone };
             }
 
             /// <summary>
@@ -250,7 +250,7 @@ namespace NetworkProtocol
             /// </summary>
             public static byte[] StartGame()
             {
-                return new[] {(byte)ClientPacketType.StartGamePacket};
+                return new[] { (byte)ClientPacketType.StartGamePacket };
             }
 
             /// <summary>
@@ -258,7 +258,7 @@ namespace NetworkProtocol
             /// </summary>
             public static byte[] GameStarted()
             {
-                return new[] {(byte) ServerPacketType.GameStarted};
+                return new[] { (byte)ServerPacketType.GameStarted };
             }
 
             /// <summary>
@@ -343,9 +343,9 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(TeamColor)];
 
-                packet[0] = (byte) ServerPacketType.UpdatePlayerColor;
+                packet[0] = (byte)ServerPacketType.UpdatePlayerColor;
                 packet[1] = playerID;
-                packet[2] = (byte) color;
+                packet[2] = (byte)color;
 
                 return packet;
             }
@@ -359,7 +359,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 2];
 
-                packet[0] = (byte) ServerPacketType.PlayerJail;
+                packet[0] = (byte)ServerPacketType.PlayerJail;
                 packet[1] = playerID;
                 packet[2] = jailTurnsLeft;
 
@@ -384,10 +384,10 @@ namespace NetworkProtocol
             public static byte[] UpdateBoardProperty(byte tileID, GameBoard.TileProperty tile)
             {
                 var packet = new byte[
-                    sizeof(ServerPacketType) + 
-                    sizeof(byte) + 
-                    sizeof(byte) + 
-                    sizeof(GameBoard.TileProperty.BuildingState) + 
+                    sizeof(ServerPacketType) +
+                    sizeof(byte) +
+                    sizeof(byte) +
+                    sizeof(GameBoard.TileProperty.BuildingState) +
                     sizeof(byte) +
                     sizeof(int)];
 
@@ -412,7 +412,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + sizeof(byte)];
 
-                packet[0] = (byte) ServerPacketType.UpdatePlayerTurn;
+                packet[0] = (byte)ServerPacketType.UpdatePlayerTurn;
                 packet[1] = playerID;
 
                 return packet;
@@ -424,7 +424,7 @@ namespace NetworkProtocol
             /// <returns></returns>
             public static byte[] ReadyPacket()
             {
-                return new[] {(byte)ClientPacketType.ReadyPacket};
+                return new[] { (byte)ClientPacketType.ReadyPacket };
             }
 
             /// <summary>
@@ -433,7 +433,7 @@ namespace NetworkProtocol
             /// <returns></returns>
             public static byte[] UnreadyPacket()
             {
-                return new[] {(byte)ClientPacketType.UnreadyPacket};
+                return new[] { (byte)ClientPacketType.UnreadyPacket };
             }
 
 
@@ -447,7 +447,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(bool)];
 
-                packet[0] = (byte) ServerPacketType.UpdatePlayerReady;
+                packet[0] = (byte)ServerPacketType.UpdatePlayerReady;
                 packet[1] = playerID;
                 packet[2] = BitConverter.GetBytes(readyStatus)[0];
 
@@ -461,7 +461,7 @@ namespace NetworkProtocol
             /// <returns></returns>
             public static byte[] LeaveGamePacket()
             {
-                return new[] {(byte)ClientPacketType.LeaveGamePacket};
+                return new[] { (byte)ClientPacketType.LeaveGamePacket };
             }
 
             /// <summary>
@@ -497,7 +497,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1 + 2];
 
-                packet[0] = (byte) ServerPacketType.DicerollResult;
+                packet[0] = (byte)ServerPacketType.DicerollResult;
                 packet[1] = playerID;
                 packet[2] = die1Result;
                 packet[3] = die2Result;
@@ -518,7 +518,7 @@ namespace NetworkProtocol
 
                 var packet = new byte[sizeof(ServerPacketType) + sizeof(byte) + sizeof(int) + nicknameEncoded.Length];
 
-                packet[0] = (byte) ServerPacketType.UpdatePlayerNickname;
+                packet[0] = (byte)ServerPacketType.UpdatePlayerNickname;
                 packet[1] = playerID;
 
                 lengthBytes.CopyTo(packet, 2);
@@ -535,7 +535,7 @@ namespace NetworkProtocol
             public static byte[] AssignPlayerID(byte playerID)
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1];
-                packet[0] = (byte) ServerPacketType.AssignPlayerID;
+                packet[0] = (byte)ServerPacketType.AssignPlayerID;
                 packet[1] = playerID;
 
                 return packet;
@@ -550,7 +550,7 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1];
 
-                packet[0] = (byte) ServerPacketType.UpdateHost;
+                packet[0] = (byte)ServerPacketType.UpdateHost;
                 packet[1] = playerID;
 
                 return packet;
@@ -567,10 +567,10 @@ namespace NetworkProtocol
             {
                 var packet = new byte[sizeof(ServerPacketType) + 2 + sizeof(MoveType)];
 
-                packet[0] = (byte) ServerPacketType.UpdatePlayerPosition;
+                packet[0] = (byte)ServerPacketType.UpdatePlayerPosition;
                 packet[1] = playerID;
                 packet[2] = newPosition;
-                packet[3] = (byte) moveType;
+                packet[3] = (byte)moveType;
 
                 return packet;
             }
@@ -583,7 +583,7 @@ namespace NetworkProtocol
             public static byte[] PlayerConnected(byte playerID)
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1];
-                packet[0] = (byte) ServerPacketType.PlayerConnected;
+                packet[0] = (byte)ServerPacketType.PlayerConnected;
                 packet[1] = playerID;
 
                 return packet;
@@ -599,10 +599,10 @@ namespace NetworkProtocol
             public static byte[] PlayerDisconnected(byte playerID, bool permanent, DisconnectReason disconnectReason)
             {
                 var packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(bool) + sizeof(DisconnectReason)];
-                packet[0] = (byte) ServerPacketType.PlayerDisconnected;
+                packet[0] = (byte)ServerPacketType.PlayerDisconnected;
                 packet[1] = playerID;
                 packet[2] = BitConverter.GetBytes(permanent)[0];
-                packet[3] = (byte) disconnectReason;
+                packet[3] = (byte)disconnectReason;
 
                 return packet;
             }
@@ -617,8 +617,8 @@ namespace NetworkProtocol
             public static byte[] PlayerUpdateMoney(byte playerID, int newAmount, bool isIncreased)
             {
                 byte[] packet = new byte[sizeof(ServerPacketType) + 1 + sizeof(int) + sizeof(bool)];
-             
-                packet[0] = (byte) ServerPacketType.UpdatePlayerMoney;
+
+                packet[0] = (byte)ServerPacketType.UpdatePlayerMoney;
                 packet[1] = playerID;
                 var newAmountBytes = BitConverter.GetBytes(newAmount);
                 newAmountBytes.CopyTo(packet, 2);
@@ -712,7 +712,7 @@ namespace NetworkProtocol
 
             public static void ChangeColor(NetworkStream stream, out TeamColor color)
             {
-                color = (TeamColor) stream.ReadByte();
+                color = (TeamColor)stream.ReadByte();
             }
 
             #endregion
@@ -727,8 +727,8 @@ namespace NetworkProtocol
             public static void PropertyOffer(NetworkStream stream, out byte playerID, out GameBoard.TileProperty.BuildingState buildingState, out int baseRent, out int cost,
                 out bool isAffordable)
             {
-                playerID = (byte) stream.ReadByte();
-                buildingState = (GameBoard.TileProperty.BuildingState) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
+                buildingState = (GameBoard.TileProperty.BuildingState)stream.ReadByte();
 
                 var baseRentBytes = new byte[sizeof(int)];
                 stream.Read(baseRentBytes, 0, baseRentBytes.Length);
@@ -748,13 +748,13 @@ namespace NetworkProtocol
 
             public static void UpdatePlayerTurn(NetworkStream stream, out byte playerID)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
             }
 
             public static void UpdatePlayerColor(NetworkStream stream, out byte playerID, out TeamColor color)
             {
-                playerID = (byte) stream.ReadByte();
-                color = (TeamColor) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
+                color = (TeamColor)stream.ReadByte();
             }
 
             /// <summary>
@@ -765,7 +765,7 @@ namespace NetworkProtocol
             /// <param name="playerID"></param>
             public static void UpdateNickname(NetworkStream stream, out string nickname, out byte playerID)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
 
                 var lengthBytes = new byte[sizeof(int)];
                 stream.Read(lengthBytes, 0, sizeof(int));
@@ -786,16 +786,16 @@ namespace NetworkProtocol
             /// <param name="jailTurnsLeft"></param>
             public static void PlayerJail(NetworkStream stream, out byte playerID, out byte jailTurnsLeft)
             {
-                playerID = (byte) stream.ReadByte();
-                jailTurnsLeft = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
+                jailTurnsLeft = (byte)stream.ReadByte();
             }
 
             public static void UpdatePlayerPosition(NetworkStream stream, out byte playerID, out byte newPosition,
                 out MoveType moveType)
             {
-                playerID = (byte) stream.ReadByte();
-                newPosition = (byte) stream.ReadByte();
-                moveType = (MoveType) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
+                newPosition = (byte)stream.ReadByte();
+                moveType = (MoveType)stream.ReadByte();
             }
 
             /// <summary>
@@ -806,8 +806,8 @@ namespace NetworkProtocol
             /// <param name="diceResult"></param>
             public static void DicerollResult(NetworkStream stream, out byte playerID, out (byte, byte) diceResult)
             {
-                playerID = (byte) stream.ReadByte();
-                diceResult = ((byte) stream.ReadByte(), (byte) stream.ReadByte());
+                playerID = (byte)stream.ReadByte();
+                diceResult = ((byte)stream.ReadByte(), (byte)stream.ReadByte());
             }
 
             /// <summary>
@@ -817,7 +817,7 @@ namespace NetworkProtocol
             /// <param name="playerID"></param>
             public static void UpdateHost(NetworkStream stream, out byte playerID)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
             }
 
             /// <summary>
@@ -830,9 +830,9 @@ namespace NetworkProtocol
             public static void PlayerDisconnected(NetworkStream stream, out byte playerID, out bool permanent,
                 out DisconnectReason disconnectReason)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
                 permanent = stream.ReadByte() == 1;
-                disconnectReason = (DisconnectReason) stream.ReadByte();
+                disconnectReason = (DisconnectReason)stream.ReadByte();
             }
 
             /// <summary>
@@ -842,7 +842,7 @@ namespace NetworkProtocol
             /// <param name="playerID"></param>
             public static void PlayerConnected(NetworkStream stream, out byte playerID)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
             }
 
             /// <summary>
@@ -855,7 +855,7 @@ namespace NetworkProtocol
             public static void UpdatePlayerMoney(NetworkStream stream, out byte playerID, out int newAmount,
                 out bool isIncreased)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
 
                 var newAmountBytes = new byte[sizeof(int)];
                 stream.Read(newAmountBytes, 0, 4);
@@ -872,7 +872,7 @@ namespace NetworkProtocol
             /// <param name="readyStatus"></param>
             public static void UpdatePlayerReady(NetworkStream stream, out byte playerID, out bool readyStatus)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
                 readyStatus = stream.ReadByte() == 1;
             }
 
@@ -887,7 +887,7 @@ namespace NetworkProtocol
             {
                 tileID = (byte)stream.ReadByte();
                 byte owner = (byte)stream.ReadByte();
-                var buildingState = (GameBoard.TileProperty.BuildingState) stream.ReadByte();
+                var buildingState = (GameBoard.TileProperty.BuildingState)stream.ReadByte();
 
                 byte groupID = (byte)stream.ReadByte();
                 var baseRentBytes = new byte[sizeof(int)];
@@ -900,12 +900,12 @@ namespace NetworkProtocol
 
             public static void DrawChanceCard(NetworkStream stream, out ChanceCard chanceCard)
             {
-                chanceCard = (ChanceCard) stream.ReadByte();
+                chanceCard = (ChanceCard)stream.ReadByte();
             }
 
             public static void KickPlayer(NetworkStream stream, out byte playerID)
             {
-                playerID = (byte) stream.ReadByte();
+                playerID = (byte)stream.ReadByte();
             }
 
             #endregion

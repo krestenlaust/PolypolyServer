@@ -127,9 +127,12 @@ namespace PolypolyGame
         {
             TcpClient netClient;
 
-            try{
+            try
+            {
                 netClient = tcpListener?.EndAcceptTcpClient(ar);
-            }catch (Exception){
+            }
+            catch (Exception)
+            {
                 return;
             }
 
@@ -208,7 +211,7 @@ namespace PolypolyGame
                         break;
 
                     bool playersAreReady = !Clients.Any(p => !(p.Value.isReady || p.Value.isHost));
-                    
+
                     if (playersAreReady)
                     {
                         gameLogic = new GameLogic(this, Clients.Keys.ToList(), Config);
@@ -270,7 +273,7 @@ namespace PolypolyGame
                 {
                     NetworkStream stream = netClient.GetStream();
                     ClientPacketType packetHeader = (ClientPacketType)stream.ReadByte();
-                    
+
                     byte[] broadcastPacket = null;
 
                     Print($"[{keyValuePair.Key}] {Enum.GetName(typeof(ClientPacketType), packetHeader)}");
@@ -281,7 +284,7 @@ namespace PolypolyGame
                     {
                         continue;
                     }
-                    
+
                     BroadcastPacket(broadcastPacket);
                 }
             }
@@ -327,7 +330,7 @@ namespace PolypolyGame
         private void MigrateHost(byte newHostID)
         {
             Print("Migrating host to " + newHostID);
-            
+
             Clients[newHostID].isHost = true;
             hostID = newHostID;
 

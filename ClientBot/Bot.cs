@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Client;
+using PolypolyGame;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Client;
-using PolypolyGame;
 using static NetworkProtocol.GameBoard;
 
 namespace ClientBot
@@ -16,7 +16,7 @@ namespace ClientBot
         private bool headerWritten;
         private int turnCount = 0;
 
-        public Bot(string hostAddress, short port, bool logRoundsToFile=false)
+        public Bot(string hostAddress, short port, bool logRoundsToFile = false)
         {
             NetworkClient = new NetworkClient();
             NetworkClient.ConnectClient(hostAddress, port);
@@ -123,7 +123,7 @@ namespace ClientBot
 
             // Change to unused color.
             var colorsInUse = (from player in NetworkClient.Players
-                              select player.Value.Color).ToHashSet();
+                               select player.Value.Color).ToHashSet();
 
             foreach (var item in Enum.GetValues(typeof(TeamColor)).Cast<TeamColor>())
             {
@@ -198,8 +198,8 @@ namespace ClientBot
             }
 
             byte sellIndex = (from property in propertyByValue
-                             orderby property.Value
-                             select property.Key).First();
+                              orderby property.Value
+                              select property.Key).First();
 
             NetworkClient.AnswerPropertyAuction(sellIndex);
         }
