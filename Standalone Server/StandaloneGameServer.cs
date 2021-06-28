@@ -1,4 +1,8 @@
-﻿using PolypolyGame;
+﻿// <copyright file="StandaloneGameServer.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using PolypolyGame;
 using System;
 using System.Diagnostics;
 using System.Net;

@@ -1,4 +1,8 @@
-﻿namespace PolypolyGame
+﻿// <copyright file="Player.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+namespace PolypolyGame
 {
     /// <summary>
     /// Represents a client's game state. A client that has entered a game.

@@ -1,4 +1,8 @@
-﻿using System;
+﻿// <copyright file="GameLogic.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetworkProtocol;
@@ -107,9 +111,13 @@ namespace PolypolyGame
                             if (jailCard)
                             {
                                 if (!Players[currentPlayerId].hasJailCoupon)
+                                {
                                     SubtractPlayerMoney(currentPlayerId, gameConfig.ChanceCardPrisonCouponWorth, false);
+                                }
                                 else
+                                {
                                     UpdateJailCouponStatus(currentPlayerId, false);
+                                }
 
                                 UpdatePlayerJailturns(currentPlayerId, 0);
 
@@ -130,44 +138,53 @@ namespace PolypolyGame
 
                             var buyProperty = Players[currentPlayerId].ReplyPropertyOffer.Value;
 
-                            if (buyProperty)
+                            if (!buyProperty)
                             {
-                                // upgrade building
-                                consideredProperty.BuildingLevel = (TileProperty.BuildingState)((byte)consideredProperty.BuildingLevel + 1);
-                                consideredProperty.Owner = currentPlayerId;
+                                SyncronizeEffects();
 
-                                int cost;
-                                if (consideredProperty.BuildingLevel == TileProperty.BuildingState.Level1)
+                                consideredProperty = null;
+                                Players[currentPlayerId].ReplyPropertyOffer = null;
+                                break;
+                            }
+
+                            // upgrade building
+                            consideredProperty.BuildingLevel = (TileProperty.BuildingState)((byte)consideredProperty.BuildingLevel + 1);
+                            consideredProperty.Owner = currentPlayerId;
+
+                            int cost;
+                            if (consideredProperty.BuildingLevel == TileProperty.BuildingState.Level1)
+                            {
+                                cost = consideredProperty.BaseCost;
+
+                                // TODO: implement group trigger.
+                                // true if player owns all properties of this kind.
+                                bool groupMonopoly = CheckGroupMonopoly(consideredProperty.GroupID, consideredProperty.Owner);
+                                UpdateGroupMonopoly(consideredProperty.GroupID, groupMonopoly);
+
+                                if (groupMonopoly)
                                 {
-                                    cost = consideredProperty.BaseCost;
+                                    // check if other group is a monopoly group.
+                                    byte otherGroupID = (byte)(consideredProperty.GroupID - consideredProperty.GroupID % 2);
 
-                                    // TODO: implement group trigger.
-                                    // true if player owns all properties of this kind.
-                                    bool groupMonopoly = CheckGroupMonopoly(consideredProperty.GroupID, consideredProperty.Owner);
-                                    UpdateGroupMonopoly(consideredProperty.GroupID, groupMonopoly);
-
-                                    if (groupMonopoly)
+                                    if (otherGroupID == consideredProperty.GroupID)
                                     {
-                                        // check if other group is a monopoly group.
-                                        byte otherGroupID = (byte)(consideredProperty.GroupID - consideredProperty.GroupID % 2);
-                                        if (otherGroupID == consideredProperty.GroupID)
-                                            otherGroupID++;
+                                        otherGroupID++;
+                                    }
 
-                                        // monopoly!
-                                        if (CheckGroupMonopoly(otherGroupID, consideredProperty.Owner))
-                                        {
-                                            GameFinished(GameOverType.Monopoly, consideredProperty.Owner);
-                                        }
+                                    // monopoly!
+                                    if (CheckGroupMonopoly(otherGroupID, consideredProperty.Owner))
+                                    {
+                                        GameFinished(GameOverType.Monopoly, consideredProperty.Owner);
                                     }
                                 }
-                                else
-                                {
-                                    cost = consideredProperty.UpgradeCost;
-                                }
-
-                                SubtractPlayerMoney(currentPlayerId, cost, false);
-                                UpdateBoardProperty(consideredPropertyPosition, consideredProperty);
                             }
+                            else
+                            {
+                                cost = consideredProperty.UpgradeCost;
+                            }
+
+                            SubtractPlayerMoney(currentPlayerId, cost, false);
+                            UpdateBoardProperty(consideredPropertyPosition, consideredProperty);
 
                             SyncronizeEffects();
 
@@ -498,8 +515,10 @@ namespace PolypolyGame
                             {
                                 TriggerAuction(0);
                             }
+
                             break;
                     }
+
                     break;
             }
         }

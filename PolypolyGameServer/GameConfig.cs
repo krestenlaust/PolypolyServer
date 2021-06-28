@@ -1,4 +1,8 @@
-﻿namespace PolypolyGame
+﻿// <copyright file="GameConfig.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+namespace PolypolyGame
 {
     /// <summary>
     /// The configurations of a game.
@@ -27,7 +31,7 @@
         /// <summary>
         /// Gets or sets the maximum amount of players allowed in a lobby.
         /// </summary>
-        /// TODO: Is this value enforced correctly?
+        /// TODO: This value isn't enforced correct in the ClientBot-module.
         public int MaxPlayers { get; set; }
 
         /// <summary>

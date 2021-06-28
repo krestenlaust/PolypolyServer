@@ -1,4 +1,8 @@
-﻿using System;
+﻿// <copyright file="Packet.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using System;
 using System.Net.Sockets;
 using System.Text;
 using PolypolyGame;
@@ -15,17 +19,55 @@ namespace NetworkProtocol
         /// </summary>
         public enum ChanceCard : byte
         {
+            /// <summary>
+            /// Adds a fixed amount of money to the players balance.
+            /// </summary>
             MoneyAdd,
+
+            /// <summary>
+            /// The player is moved to the train-tile and activates the train-event.
+            /// </summary>
             TrainCoupon,
+            
+            /// <summary>
+            /// The next time the player is sent to prison, they stay where they are.
+            /// If the player already owns a prison coupon, they earn the estimated value.
+            /// </summary>
             PrisonCoupon,
+
+            /// <summary>
+            /// The player is moved to the first tile.
+            /// </summary>
             Go,
 
+            /// <summary>
+            /// The player is sentenced and moved to jail.
+            /// </summary>
             GotoPrison,
+
+            /// <summary>
+            /// Deducts a fixed amount of money from the players balance.
+            /// </summary>
             MoneyDeduct,
+
+            /// <summary>
+            /// The next time the player lands on a property, they pay double.
+            /// </summary>
             DoubleRentCoupon,
+
+            /// <summary>
+            /// The auction-event is triggered for the player, if the player has any properties.
+            /// </summary>
             ForceAuction,
 
+            /// <summary>
+            /// The player is moved four tiles back, and the corresponding tile is 'activated'.
+            /// </summary>
             MoveFourTilesBack,
+
+            /// <summary>
+            /// Nothing happens.
+            /// </summary>
             Blank,
         }
 
@@ -184,7 +226,6 @@ namespace NetworkProtocol
             /// Used by server to signal when a player has gone bankrupt and is out of the game.
             /// </summary>
             /// <param name="playerID"></param>
-            /// <returns></returns>
             public static byte[] PlayerBankrupt(byte playerID)
             {
                 return new[]
@@ -296,6 +337,7 @@ namespace NetworkProtocol
             /// <summary>
             /// Used by client.
             /// </summary>
+            /// <returns></returns>
             public static byte[] StartGame()
             {
                 return new[] { (byte)ClientPacketType.StartGamePacket };

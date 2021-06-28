@@ -1,4 +1,8 @@
-﻿using Sharprompt;
+﻿// <copyright file="Program.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using Sharprompt;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +13,11 @@ namespace Developer_Server
 {
     class Program
     {
+        private const string ServerNotRunningMsg = "Server isn't running.";
+        private const string ServerStoppingMsg = "Stopping server...";
+        private const string ServerStoppedMsg = "Server stopped.";
+        private const string GameNotStartedMsg = "Game hasn't started";
+
         private enum MainCommand
         {
             Player,
@@ -50,16 +59,16 @@ namespace Developer_Server
                     case MainCommand.StopServer:
                         if (token is null)
                         {
-                            Console.WriteLine("Server isn't running.");
+                            Console.WriteLine(ServerNotRunningMsg);
                             continue;
                         }
 
                         token.Cancel();
 
-                        Console.WriteLine("Stopping server...");
+                        Console.WriteLine(ServerStoppingMsg);
                         Thread.Sleep(2000);
 
-                        Console.WriteLine("Server stopped.");
+                        Console.WriteLine(ServerStoppedMsg);
                         break;
                     case MainCommand.StartServer:
                         try
@@ -76,13 +85,13 @@ namespace Developer_Server
                     case MainCommand.Player:
                         if (gameServer is null)
                         {
-                            Console.WriteLine("Server isn't running.");
+                            Console.WriteLine(ServerNotRunningMsg);
                             continue;
                         }
 
                         if (gameServer.GameLogic is null)
                         {
-                            Console.WriteLine("Game hasn't started");
+                            Console.WriteLine(GameNotStartedMsg);
                             continue;
                         }
 
@@ -119,7 +128,7 @@ namespace Developer_Server
                     case MainCommand.Game:
                         if (gameServer is null)
                         {
-                            Console.WriteLine("Server isn't running.");
+                            Console.WriteLine(ServerNotRunningMsg);
                             continue;
                         }
 
@@ -128,7 +137,7 @@ namespace Developer_Server
                             case GameSetting.ManualDiceRoll:
                                 if (gameServer.GameLogic is null)
                                 {
-                                    Console.WriteLine("Game hasn't started");
+                                    Console.WriteLine(GameNotStartedMsg);
                                     continue;
                                 }
 

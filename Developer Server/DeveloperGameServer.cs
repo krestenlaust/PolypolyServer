@@ -1,4 +1,8 @@
-﻿using ClientBot;
+﻿// <copyright file="DeveloperGameServer.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using ClientBot;
 using PolypolyGame;
 using System;
 using System.Collections.Generic;
@@ -9,42 +13,57 @@ using System.Threading.Tasks;
 
 namespace Developer_Server
 {
+    /// <summary>
+    /// Game server with debugging in mind.
+    /// </summary>
     class DeveloperGameServer
     {
-        private const int FramesPerSecondCap = 30;
+        private const int UpdatesPerSecondCap = 30;
+        private const int Port = 6060;
         public Lobby Lobby;
+        private readonly Stopwatch updateTime = new Stopwatch();
+        private readonly List<Bot> bots = new List<Bot>();
+        private readonly ToggleableLogger log;
+
         public GameLogic GameLogic { get; private set; }
-        private readonly Stopwatch frameTime = new Stopwatch();
-        private List<Bot> bots = new List<Bot>();
-        private ToggleableLogger logger;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="DeveloperGameServer"/> class.
         /// Starts a new server on port 6060.
         /// </summary>
         public DeveloperGameServer(bool loggingEnabled)
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, 6060);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Port);
 
-            logger = new ToggleableLogger(loggingEnabled);
-            Lobby = new Lobby(endPoint, logger);
+            log = new ToggleableLogger(loggingEnabled);
+            Lobby = new Lobby(endPoint, log);
             Lobby.GameStarted += (GameLogic gameLogic) => GameLogic = gameLogic;
         }
 
+        /// <summary>
+        /// Enables logging.
+        /// </summary>
         public void EnableLogging()
         {
             Console.WriteLine("| Logging enabled |");
-            logger.isPrinting = true;
+            log.isPrinting = true;
         }
 
+        /// <summary>
+        /// Disables logging.
+        /// </summary>
         public void DisableLogging()
         {
             Console.WriteLine("| Logging disable |");
-            logger.isPrinting = false;
+            log.isPrinting = false;
         }
 
+        /// <summary>
+        /// Instantiates a <see cref="Bot"/> and connects it to localhost.
+        /// </summary>
         public void SpawnBot()
         {
-            bots.Add(new Bot(IPAddress.Loopback.ToString(), 6060, bots.Count == 0));
+            bots.Add(new Bot(IPAddress.Loopback.ToString(), Port, bots.Count == 0));
         }
 
         /// <summary>
@@ -62,10 +81,10 @@ namespace Developer_Server
         {
             while (true)
             {
-                double waitDuration = Math.Max(0, 1000 / FramesPerSecondCap - (int)frameTime.ElapsedMilliseconds);
+                double waitDuration = Math.Max(0, 1000 / UpdatesPerSecondCap - (int)updateTime.ElapsedMilliseconds);
                 bool cancelled = token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(waitDuration));
 
-                frameTime.Restart();
+                updateTime.Restart();
 
                 if (cancelled)
                 {

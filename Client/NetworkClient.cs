@@ -1,4 +1,8 @@
-﻿using NetworkProtocol;
+﻿// <copyright file="NetworkClient.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using NetworkProtocol;
 using PolypolyGame;
 using System;
 using System.Collections.Generic;
@@ -14,7 +18,7 @@ namespace Client
         /// <summary>
         /// Only contains entries for players who are connected.
         /// </summary>
-        public Dictionary<byte, ClientPlayer> Players = new Dictionary<byte, ClientPlayer>();
+        public readonly Dictionary<byte, ClientPlayer> Players = new Dictionary<byte, ClientPlayer>();
         public GameBoard Board;
 
         public byte SelfID { get; private set; } = byte.MaxValue;
@@ -169,7 +173,7 @@ namespace Client
                         break;
                     case ServerPacketType.UpdatePlayerMoney:
                         {
-                            Deconstruct.UpdatePlayerMoney(stream, out byte playerID, out int newAmount, out bool isIncreased);
+                            Deconstruct.UpdatePlayerMoney(stream, out byte playerID, out int newAmount, out bool _);
                             int oldAmount = Players[playerID].Money;
                             Players[playerID].Money = newAmount;
 

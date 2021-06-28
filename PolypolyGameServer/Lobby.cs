@@ -1,4 +1,8 @@
-﻿using System;
+﻿// <copyright file="Lobby.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +20,7 @@ namespace PolypolyGame
         public readonly Dictionary<byte, Client> Clients = new Dictionary<byte, Client>();
         public readonly GameConfig Config;
         internal readonly Logger log;
+        private const string VersionInfo = "1.2.0";
         private GameLogic gameLogic;
         private byte? hostID = null;
         private TcpListener tcpListener;
@@ -24,17 +29,6 @@ namespace PolypolyGame
         /// Invoked once the game starts.
         /// </summary>
         public event Action<GameLogic> GameStarted;
-
-        /// <summary>
-        /// Gets a value indicating whether the game is in progress.
-        /// </summary>
-        private bool isGameInProgress
-        {
-            get
-            {
-                return !(gameLogic is null);
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Lobby"/> class.
@@ -61,6 +55,14 @@ namespace PolypolyGame
             Config = GameConfig.StandardConfig;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the game is in progress.
+        /// </summary>
+        private bool isGameInProgress => !(gameLogic is null);
+
+        /// <summary>
+        /// Disposes the game.
+        /// </summary>
         public void EndGame()
         {
             gameLogic = null;
@@ -71,7 +73,7 @@ namespace PolypolyGame
         /// </summary>
         public void Start()
         {
-            Print("Version 1.2.0");
+            Print($"Version {VersionInfo}");
 
             StartAcceptingPlayers();
             tcpListener.BeginAcceptTcpClient(PlayerConnected, null);
@@ -100,9 +102,9 @@ namespace PolypolyGame
                     NetworkStream stream = netClient.GetStream();
                     ClientPacketType packetHeader = (ClientPacketType)stream.ReadByte();
 
-                    byte[] broadcastPacket = null;
-
                     Print($"[{keyValuePair.Key}] {Enum.GetName(typeof(ClientPacketType), packetHeader)}");
+
+                    byte[] broadcastPacket = null;
 
                     HandleClientPacket(packetHeader, stream, ref broadcastPacket, keyValuePair.Key);
 
@@ -187,21 +189,24 @@ namespace PolypolyGame
         /// <param name="ar">The asyncronous result of which to retrieve tcpclient.</param>
         private void PlayerConnected(IAsyncResult ar)
         {
-            TcpClient netClient = null;
+            // TcpListener has been disposed.
+            if (tcpListener is null)
+            {
+                return;
+            }
+
+            TcpClient netClient;
 
             try
             {
-                netClient = tcpListener?.EndAcceptTcpClient(ar);
+                netClient = tcpListener.EndAcceptTcpClient(ar);
             }
-            catch (Exception)
+            catch (SocketException ex)
             {
-                return;
-            }
-
-            // TcpListener has been disposed.
-            if (netClient is null)
-            {
-                return;
+                // TODO: Find out what causes this exception and document it.
+                log.Print(ex.SocketErrorCode);
+                log.Print(ex);
+                throw ex;
             }
 
             byte newID = (byte)Clients.Count;
@@ -250,7 +255,7 @@ namespace PolypolyGame
                         break;
                     }
 
-                    /// TODO: Hardcoded length limit should be a constant.
+                    // TODO: Hardcoded length limit should be a constant.
                     if (nickname.Length > 15)
                     {
                         nickname = nickname.Substring(0, 15);
@@ -344,7 +349,7 @@ namespace PolypolyGame
                 gameLogic.Players.Remove(playerID);
             }
 
-            /// TODO: Possible bug with not notifying client self.
+            // TODO: Possible bug with not notifying client self.
             // no more players, no one to notify.
             if (Clients.Count == 0)
             {
@@ -375,9 +380,18 @@ namespace PolypolyGame
 
         private bool SendToPlayer(byte playerID, byte[] packet)
         {
+            TcpClient tcpClient = Clients[playerID].NetClient;
+
+            if (!tcpClient.Connected)
+            {
+                log.Print("Player not connected");
+                DisconnectPlayer(playerID, DisconnectReason.LostConnection);
+                return false;
+            }
+
             try
             {
-                NetworkStream stream = Clients[playerID].NetClient.GetStream();
+                NetworkStream stream = tcpClient.GetStream();
                 stream.Write(packet, 0, packet.Length);
                 return true;
             }

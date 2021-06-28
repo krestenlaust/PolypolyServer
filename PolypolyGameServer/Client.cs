@@ -1,4 +1,8 @@
-﻿using System.Net.Sockets;
+﻿// <copyright file="Client.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using System.Net.Sockets;
 
 namespace PolypolyGame
 {
@@ -10,7 +14,7 @@ namespace PolypolyGame
         Yellow = 0,
         Red = 1,
         Green = 2,
-        Blue = 3
+        Blue = 3,
     }
 
     /// <summary>

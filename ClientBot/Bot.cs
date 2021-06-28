@@ -1,4 +1,8 @@
-﻿using Client;
+﻿// <copyright file="Bot.cs" company="PolyPoly Team">
+// Copyright (c) PolyPoly Team. All rights reserved.
+// </copyright>
+
+using Client;
 using PolypolyGame;
 using System;
 using System.Collections.Generic;
@@ -9,30 +13,33 @@ using static NetworkProtocol.GameBoard;
 
 namespace ClientBot
 {
+    /// <summary>
+    /// Acts as a networked client and reacts to events. Can output game statistics.
+    /// </summary>
     public class Bot
     {
-        private readonly NetworkClient NetworkClient;
-        private StreamWriter statisticsLog;
+        private readonly NetworkClient networkClient;
+        private readonly StreamWriter statisticsLog;
         private bool headerWritten;
         private int turnCount = 0;
 
         public Bot(string hostAddress, short port, bool logRoundsToFile = false)
         {
-            NetworkClient = new NetworkClient();
-            NetworkClient.ConnectClient(hostAddress, port);
+            networkClient = new NetworkClient();
+            networkClient.ConnectClient(hostAddress, port);
 
-            NetworkClient.onAuctionProperty += AuctionProperty;
-            NetworkClient.onDiceRolled += (_) => NetworkClient.SignalAnimationDone();
-            NetworkClient.onDrawChanceCard += (_) => NetworkClient.SignalAnimationDone();
-            NetworkClient.onGameOver += GameOver;
-            NetworkClient.onGameStarted += GameStarted;
-            NetworkClient.onPrisonCardOffer += PrisonCardOffered;
-            NetworkClient.onPropertyOffer += PropertyOffered;
-            NetworkClient.onUpdatePlayerColor += PlayerColorUpdated;
-            NetworkClient.onUpdatePlayerTurn += PlayerTurnUpdated;
-            NetworkClient.onPlayerConnected += PlayerConnected;
-            NetworkClient.onNewNickname += NicknamedUpdated;
-            NetworkClient.onUpdateReadyPlayer += ReadyPlayerUpdated;
+            networkClient.onAuctionProperty += AuctionProperty;
+            networkClient.onDiceRolled += (_) => networkClient.SignalAnimationDone();
+            networkClient.onDrawChanceCard += (_) => networkClient.SignalAnimationDone();
+            networkClient.onGameOver += GameOver;
+            networkClient.onGameStarted += GameStarted;
+            networkClient.onPrisonCardOffer += PrisonCardOffered;
+            networkClient.onPropertyOffer += PropertyOffered;
+            networkClient.onUpdatePlayerColor += PlayerColorUpdated;
+            networkClient.onUpdatePlayerTurn += PlayerTurnUpdated;
+            networkClient.onPlayerConnected += PlayerConnected;
+            networkClient.onNewNickname += NicknamedUpdated;
+            networkClient.onUpdateReadyPlayer += ReadyPlayerUpdated;
 
             if (logRoundsToFile)
             {
@@ -42,20 +49,21 @@ namespace ClientBot
 
         private void ReadyPlayerUpdated(NetworkClient.UpdatePlayerReadyArgs e)
         {
-            if (e.PlayerID.Value == NetworkClient.SelfID)
+            if (e.PlayerID.Value == networkClient.SelfID)
             {
                 return;
             }
 
-            if (NetworkClient.isHost && NetworkClient.Players.Count == 4)
+            // TODO: MaxPlayerCount not used
+            if (networkClient.isHost && networkClient.Players.Count == 4)
             {
-                NetworkClient.HostStartGame();
+                networkClient.HostStartGame();
             }
         }
 
         private void NicknamedUpdated(NetworkClient.UpdateNicknameArgs e)
         {
-            if (e.PlayerID.Value == NetworkClient.SelfID)
+            if (e.PlayerID.Value == networkClient.SelfID)
             {
                 return;
             }
@@ -63,19 +71,19 @@ namespace ClientBot
 
         private void PlayerConnected(NetworkClient.PlayerConnectedArgs e)
         {
-            if (e.PlayerID.Value != NetworkClient.SelfID)
+            if (e.PlayerID.Value != networkClient.SelfID)
             {
                 return;
             }
 
-            NetworkClient.UpdateUsername("CPU");
-            NetworkClient.SendReadyState(true);
+            networkClient.UpdateUsername("CPU");
+            networkClient.SendReadyState(true);
         }
 
         private string LogRound()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var item in NetworkClient.Players)
+            foreach (var item in networkClient.Players)
             {
                 sb.Append(item.Value.Money);
                 sb.Append(',');
@@ -86,11 +94,12 @@ namespace ClientBot
 
         private void PlayerTurnUpdated(NetworkClient.UpdatePlayerTurnArgs e)
         {
+            // TODO: MaxPlayerCount not used
             if (!(statisticsLog is null) && (turnCount++ % 4 == 0))
             {
                 if (!headerWritten)
                 {
-                    foreach (var item in NetworkClient.Players)
+                    foreach (var item in networkClient.Players)
                     {
                         statisticsLog.Write($"{item.Key},");
                     }
@@ -103,26 +112,26 @@ namespace ClientBot
                 statisticsLog.Flush();
             }
 
-            if (e.PlayerID.Value == NetworkClient.SelfID)
+            if (e.PlayerID.Value == networkClient.SelfID)
             {
-                NetworkClient.RollDice();
+                networkClient.RollDice();
             }
         }
 
         private void PlayerColorUpdated(NetworkClient.UpdatePlayerColorArgs e)
         {
-            if (e.PlayerID.Value == NetworkClient.SelfID)
+            if (e.PlayerID.Value == networkClient.SelfID)
             {
                 return;
             }
 
-            if (e.Color != NetworkClient[NetworkClient.SelfID].Color)
+            if (e.Color != networkClient[networkClient.SelfID].Color)
             {
                 return;
             }
 
             // Change to unused color.
-            var colorsInUse = (from player in NetworkClient.Players
+            var colorsInUse = (from player in networkClient.Players
                                select player.Value.Color).ToHashSet();
 
             foreach (var item in Enum.GetValues(typeof(TeamColor)).Cast<TeamColor>())
@@ -132,18 +141,18 @@ namespace ClientBot
                     continue;
                 }
 
-                NetworkClient.SendReadyState(false);
-                NetworkClient.ChangeColorPreference(item);
-                NetworkClient.SendReadyState(true);
+                networkClient.SendReadyState(false);
+                networkClient.ChangeColorPreference(item);
+                networkClient.SendReadyState(true);
                 break;
             }
         }
 
         private void PropertyOffered(NetworkClient.PropertyOfferArgs e)
         {
-            if (e.isAffordable && e.PlayerID.Value == NetworkClient.SelfID)
+            if (e.isAffordable && e.PlayerID.Value == networkClient.SelfID)
             {
-                NetworkClient.AnswerPropertyOffer(true);
+                networkClient.AnswerPropertyOffer(true);
             }
         }
 
@@ -154,7 +163,7 @@ namespace ClientBot
 
         private void GameStarted()
         {
-            NetworkClient.SignalAnimationDone();
+            networkClient.SignalAnimationDone();
         }
 
         private void GameOver(NetworkClient.GameOverArgs obj)
@@ -163,23 +172,23 @@ namespace ClientBot
 
         private void AuctionProperty(NetworkClient.AuctionPropertyArgs e)
         {
-            if (e.PlayerID.Value != NetworkClient.SelfID)
+            if (e.PlayerID.Value != networkClient.SelfID)
             {
                 return;
             }
 
             Dictionary<byte, int> propertyByValue = new Dictionary<byte, int>();
 
-            for (byte i = 0; i < NetworkClient.Board.PropertyTiles.Length; i++)
+            for (byte i = 0; i < networkClient.Board.PropertyTiles.Length; i++)
             {
-                TileProperty property = NetworkClient.Board.PropertyTiles[i];
+                TileProperty property = networkClient.Board.PropertyTiles[i];
 
                 if (property is null)
                 {
                     continue;
                 }
 
-                if (property.Owner != NetworkClient.SelfID)
+                if (property.Owner != networkClient.SelfID)
                 {
                     continue;
                 }
@@ -201,9 +210,9 @@ namespace ClientBot
                               orderby property.Value
                               select property.Key).First();
 
-            NetworkClient.AnswerPropertyAuction(sellIndex);
+            networkClient.AnswerPropertyAuction(sellIndex);
         }
 
-        public void UpdateNetwork() => NetworkClient?.UpdateNetwork();
+        public void UpdateNetwork() => networkClient?.UpdateNetwork();
     }
 }
